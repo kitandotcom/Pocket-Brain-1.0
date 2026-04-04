@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pocket Brain</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080C14; font-family: 'Space Mono', 'Courier New', monospace; color: #E8F0FE; min-height: 100vh; }
+  ::-webkit-scrollbar { display: none; }
+  .glow { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.12) 0%, transparent 55%),
+                radial-gradient(ellipse at 70% 80%, rgba(16,185,129,0.08) 0%, transparent 50%); }
+  .wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 24px 16px 90px; }
+  .header { margin-bottom: 24px; }
+  .label { font-size: 10px; letter-spacing: 5px; color: #6366F1; text-transform: uppercase; margin-bottom: 4px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-end; }
+  .title { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .subtitle { font-size: 12px; opacity: 0.4; margin-top: 2px; }
+  .balance-box { text-align: right; }
+  .balance-label { font-size: 10px; opacity: 0.4; letter-spacing: 2px; }
+  .balance-val { font-size: 22px; font-weight: 700; color: #10B981; }
+  .tabs { display: flex; background: rgba(255,255,255,0.03); border-radius: 14px; padding: 4px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06); gap: 2px; }
+  .tab { flex: 1; padding: 9px 4px; font-size: 10px; font-family: inherit; background: transparent; color: rgba(255,255,255,0.4); border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tab.active { background: #6366F1; color: #fff; font-weight: 700; }
+  .tab-icon { font-size: 16px; }
+  .card { background: rgba(255,255,255,0.03); border-radius: 16px; padding: 18px; border: 1px solid rgba(255,255,255,0.07); margin-bottom: 12px; }
+  .card-label { font-size: 10px; letter-spacing: 3px; opacity: 0.4; text-transform: uppercase; margin-bottom: 12px; }
+  .summary { display: flex; background: rgba(99,102,241,0.1); border-radius: 16px; padding: 14px; border: 1px solid rgba(99,102,241,0.2); margin-bottom: 16px; }
+  .summary-item { flex: 1; text-align: center; }
+  .summary-item:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.08); }
+  .s-label { font-size: 9px; opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .s-val { font-size: 14px; font-weight: 700; }
+  .bank-card { border-radius: 16px; padding: 18px; margin-bottom: 12px; }
+  .bank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .bank-logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .bank-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .bank-name { font-weight: 700; font-size: 14px; }
+  .bank-acc { font-size: 11px; opacity: 0.4; }
+  .linked-badge { font-size: 10px; padding: 4px 10px; border-radius: 20px; background: rgba(16,185,129,0.15); color: #10B981; letter-spacing: 1px; }
+  .bank-nums { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .num-label { font-size: 10px; opacity: 0.4; letter-spacing: 2px; margin-bottom: 2px; }
+  .num-val { font-size: 20px; font-weight: 700; }
+  .bar-track { height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .bar-note { font-size: 10px; opacity: 0.3; margin-top: 5px; }
+  .add-bank-btn { width: 100%; padding: 14px; background: transparent; border: 1px dashed rgba(99,102,241,0.4); border-radius: 16px; color: #6366F1; font-size: 13px; font-family: inherit; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
+  .add-bank-btn:hover { background: rgba(99,102,241,0.08); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+  .modal { background: #0F1623; border-radius: 24px 24px 0 0; padding: 28px; width: 100%; max-width: 480px; border: 1px solid rgba(255,255,255,0.08); animation: slideUp 0.3s ease; max-height: 85vh; overflow-y: auto; }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; opacity: 0.4; margin-bottom: 20px; }
+  .bank-option { width: 100%; padding: 13px 16px; margin-bottom: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; color: #E8F0FE; font-size: 13px; font-family: inherit; cursor: pointer; text-align: left; transition: background 0.15s; }
+  .bank-option:hover { background: rgba(99,102,241,0.1); }
+  .input-group { margin-bottom: 14px; }
+  .input-label { font-size: 10px; opacity: 0.4; letter-spacing: 2px; margin-bottom: 6px; text-transform: uppercase; }
+  input[type=text], input[type=password], textarea { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: #E8F0FE; font-family: inherit; outline: none; font-size: 14px; }
+  textarea { resize: vertical; line-height: 1.6; font-size: 13px; }
+  input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.2); }
+  .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #6366F1, #8B5CF6); border: none; border-radius: 12px; color: #fff; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 700; letter-spacing: 1px; transition: opacity 0.2s; box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-green { width: 100%; padding: 14px; background: linear-gradient(135deg, #10B981, #059669); border: none; border-radius: 12px; color: #fff; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 700; letter-spacing: 1px; }
+  .sample-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip { padding: 5px 10px; font-size: 10px; border-radius: 8px; font-family: inherit; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); color: #6366F1; cursor: pointer; }
+  .parsed-card { background: rgba(16,185,129,0.08); border-radius: 16px; padding: 20px; border: 1px solid rgba(16,185,129,0.2); margin-bottom: 12px; animation: fadeUp 0.3s ease; }
+  .parsed-ok { font-size: 10px; letter-spacing: 3px; color: #10B981; margin-bottom: 14px; }
+  .parsed-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
+  .parsed-key { opacity: 0.4; }
+  .parsed-val { font-weight: 600; }
+  .cat-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .cat-pill { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-family: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: rgba(255,255,255,0.4); transition: all 0.15s; }
+  .tx { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.06); }
+  .tx-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-meta { display: flex; gap: 8px; margin-top: 3px; align-items: center; }
+  .tx-date { font-size: 10px; opacity: 0.35; }
+  .tx-bank { font-size: 9px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.05); opacity: 0.5; }
+  .tx-right { text-align: right; flex-shrink: 0; }
+  .tx-amt { font-weight: 700; font-size: 14px; }
+  .tx-edit { background: none; border: none; color: rgba(255,255,255,0.25); cursor: pointer; font-size: 10px; margin-top: 2px; font-family: inherit; }
+  .cat-editor { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .cat-editor-label { font-size: 10px; opacity: 0.4; letter-spacing: 2px; margin-bottom: 8px; }
+  .breakdown-row { margin-bottom: 14px; }
+  .br-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+  .ai-box { background: rgba(99,102,241,0.08); border-radius: 16px; padding: 18px; border: 1px solid rgba(99,102,241,0.2); margin-bottom: 12px; }
+  .ai-label { font-size: 10px; letter-spacing: 3px; color: #6366F1; margin-bottom: 4px; }
+  .ai-sub { font-size: 11px; opacity: 0.35; margin-bottom: 14px; }
+  .ai-text { font-size: 13px; line-height: 1.8; }
+  .ai-placeholder { text-align: center; opacity: 0.3; padding: 16px 0; font-size: 13px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #10B981; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 13px; font-weight: 700; z-index: 200; animation: fadeUp 0.3s ease; letter-spacing: 1px; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(14px) translateX(-50%); } to { opacity:1; transform:translateY(0) translateX(-50%); } }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.9} }
+  .pulse { animation: pulse 1.5s infinite; }
+  .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 12px; }
+  .filter-chip { padding: 5px 12px; border-radius: 20px; font-size: 10px; font-family: inherit; border: none; cursor: pointer; white-space: nowrap; letter-spacing: 1px; }
+  .error-box { background: rgba(255,107,53,0.1); border-radius: 12px; padding: 14px; border: 1px solid rgba(255,107,53,0.2); font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+
+  <div class="header">
+    <div class="label">POCKET BRAIN</div>
+    <div class="header-row">
+      <div>
+        <div class="title">Your Money</div>
+        <div class="subtitle">All accounts in one place</div>
+      </div>
+      <div class="balance-box">
+        <div class="balance-label">NET BALANCE</div>
+        <div class="balance-val" id="netBalance">₦319,100</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('accounts')" id="tab-accounts"><span class="tab-icon">🏦</span><span>Accounts</span></button>
+    <button class="tab" onclick="switchTab('import')" id="tab-import"><span class="tab-icon">📩</span><span>Import</span></button>
+    <button class="tab" onclick="switchTab('transactions')" id="tab-transactions"><span class="tab-icon">📋</span><span>Transactions</span></button>
+    <button class="tab" onclick="switchTab('insight')" id="tab-insight"><span class="tab-icon">🤖</span><span>AI</span></button>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div id="pane-accounts">
+    <div class="summary">
+      <div class="summary-item"><div class="s-label">Total Balance</div><div class="s-val" style="color:#10B981">₦379,700</div></div>
+      <div class="summary-item"><div class="s-label">Total Spent</div><div class="s-val" style="color:#FF6B35" id="totalSpent">₦61,000</div></div>
+      <div class="summary-item"><div class="s-label">Transactions</div><div class="s-val" style="color:#6366F1" id="txCount">5</div></div>
+    </div>
+    <div class="bank-card" style="background:linear-gradient(135deg,rgba(255,102,0,0.13),rgba(255,255,255,0.03));border:1px solid rgba(255,102,0,0.2)">
+      <div class="bank-header">
+        <div class="bank-logo-wrap">
+          <div class="bank-icon" style="background:rgba(255,102,0,0.2)">🟠</div>
+          <div><div class="bank-name">GTBank</div><div class="bank-acc">**** 4821</div></div>
+        </div>
+        <div class="linked-badge">LINKED ✓</div>
+      </div>
+      <div class="bank-nums">
+        <div><div class="num-label">BALANCE</div><div class="num-val">₦284,500</div></div>
+        <div style="text-align:right"><div class="num-label">TRACKED SPEND</div><div class="num-val" style="color:#FF6B35" id="gtbSpend">₦57,400</div></div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="gtbBar" style="background:#FF6600;width:20%"></div></div>
+      <div class="bar-note" id="gtbPct">20.2% of balance spent</div>
+    </div>
+    <div class="bank-card" style="background:linear-gradient(135deg,rgba(204,0,0,0.13),rgba(255,255,255,0.03));border:1px solid rgba(204,0,0,0.2)">
+      <div class="bank-header">
+        <div class="bank-logo-wrap">
+          <div class="bank-icon" style="background:rgba(204,0,0,0.2)">🔴</div>
+          <div><div class="bank-name">Access Bank</div><div class="bank-acc">**** 7743</div></div>
+        </div>
+        <div class="linked-badge">LINKED ✓</div>
+      </div>
+      <div class="bank-nums">
+        <div><div class="num-label">BALANCE</div><div class="num-val">₦95,200</div></div>
+        <div style="text-align:right"><div class="num-label">TRACKED SPEND</div><div class="num-val" style="color:#FF6B35" id="accessSpend">₦3,600</div></div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="accessBar" style="background:#CC0000;width:4%"></div></div>
+      <div class="bar-note" id="accessPct">3.8% of balance spent</div>
+    </div>
+    <button class="add-bank-btn" onclick="openModal()">+ LINK ANOTHER BANK</button>
+  </div>
+
+  <!-- IMPORT -->
+  <div id="pane-import" style="display:none">
+    <div class="card">
+      <div class="card-label">Paste Bank Alert</div>
+      <div style="font-size:12px;opacity:0.35;margin-bottom:14px">Copy a debit SMS or email alert from your bank and paste below</div>
+      <textarea id="alertInput" rows="5" placeholder="e.g. Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC..."></textarea>
+      <div style="font-size:10px;opacity:0.3;margin:10px 0 8px">Or try a sample:</div>
+      <div class="sample-chips">
+        <button class="chip" onclick="setSample(0)">Food</button>
+        <button class="chip" onclick="setSample(1)">Transport</button>
+        <button class="chip" onclick="setSample(2)">Transfer</button>
+        <button class="chip" onclick="setSample(3)">Entertainment</button>
+        <button class="chip" onclick="setSample(4)">Fuel</button>
+      </div>
+      <button class="btn-primary" id="parseBtn" onclick="parseAlert()">🤖 PARSE ALERT</button>
+    </div>
+    <div id="parsedCard" style="display:none" class="parsed-card">
+      <div class="parsed-ok">✓ PARSED SUCCESSFULLY</div>
+      <div class="parsed-row"><span class="parsed-key">Merchant</span><span class="parsed-val" id="pName">—</span></div>
+      <div class="parsed-row"><span class="parsed-key">Amount</span><span class="parsed-val" id="pAmt">—</span></div>
+      <div class="parsed-row"><span class="parsed-key">Date</span><span class="parsed-val" id="pDate">—</span></div>
+      <div class="parsed-row"><span class="parsed-key">Bank</span><span class="parsed-val" id="pBank">—</span></div>
+      <div style="font-size:10px;opacity:0.4;letter-spacing:2px;margin-top:12px;margin-bottom:8px">CATEGORY</div>
+      <div class="cat-pills" id="parsedCats"></div>
+      <div style="margin-top:16px"><button class="btn-green" onclick="confirmParsed()">ADD TO TRANSACTIONS ✓</button></div>
+    </div>
+    <div id="parseError" style="display:none" class="error-box">⚠️ Couldn't parse that alert. Try pasting the raw SMS/email text.</div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div id="pane-transactions" style="display:none">
+    <div id="txList"></div>
+  </div>
+
+  <!-- INSIGHT -->
+  <div id="pane-insight" style="display:none">
+    <div class="card">
+      <div class="card-label">Spending Breakdown</div>
+      <div id="breakdown"></div>
+    </div>
+    <div class="ai-box">
+      <div class="ai-label">AI FINANCE ADVISOR</div>
+      <div class="ai-sub">Personalized advice based on your actual transactions</div>
+      <div id="aiContent"><div class="ai-placeholder">Tap below to get advice</div></div>
+    </div>
+    <button class="btn-primary" id="insightBtn" onclick="getInsight()">🤖 ANALYZE MY SPENDING</button>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal-overlay" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()"><div id="modalContent"></div></div>
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────
+// This calls YOUR Vercel backend, not Anthropic directly
+// Your API key stays secret on the server
+const API_URL = "/api/claude";
+
+// ─── Data ─────────────────────────────────────────────
+const CATEGORIES = ["Food","Transport","Utilities","Health","Entertainment","Shopping","Education","Savings","Transfer","Other"];
+const CAT_COLORS = {Food:"#FF6B35",Transport:"#4ECDC4",Utilities:"#FFE66D",Health:"#A8E6CF",Entertainment:"#FF8B94",Shopping:"#C3B1E1",Education:"#87CEEB",Savings:"#98FB98",Transfer:"#DEB887",Other:"#D3D3D3"};
+const CAT_ICONS = {Food:"🍔",Transport:"🚗",Utilities:"💡",Health:"💊",Entertainment:"🎬",Shopping:"🛍️",Education:"📚",Savings:"💰",Transfer:"↔️",Other:"📦"};
+const SAMPLES = [
+  "Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC LEKKI. Available balance: N284,500.00",
+  "Access Bank Alert: Debit of NGN 1,200.00 from your account ending 7743 for UBER TRIP on 03/04/2026. Bal: NGN 95,200.00",
+  "GTBank: Debit of N45,000.00 on 02-Apr-2026. Narration: TRANSFER TO JOHN ADEYEMI. Avail Bal: N288,000.00",
+  "Debit Alert! N8,900.00 deducted from GTBank Acct *4821 for DSTV SUBSCRIPTION on 01-Apr-2026. Bal: N333,000.00",
+  "Access Bank: Your account was debited N2,400.00 for PETROL STATION IKEJA on 01/04/2026. Avail bal: N96,400.00",
+];
+
+// Load expenses from localStorage so data persists between sessions
+let expenses = JSON.parse(localStorage.getItem("pb_expenses") || "null") || [
+  {id:1,name:"Chicken Republic Lekki",amount:3500,category:"Food",date:"2026-04-03",source:"gtb"},
+  {id:2,name:"DSTV Subscription",amount:8900,category:"Entertainment",date:"2026-04-01",source:"gtb"},
+  {id:3,name:"Uber Trip",amount:1200,category:"Transport",date:"2026-04-03",source:"access"},
+  {id:4,name:"Transfer to John Adeyemi",amount:45000,category:"Transfer",date:"2026-04-02",source:"gtb"},
+  {id:5,name:"Petrol Station Ikeja",amount:2400,category:"Transport",date:"2026-04-01",source:"access"},
+];
+
+function saveExpenses(){ localStorage.setItem("pb_expenses", JSON.stringify(expenses)); }
+
+let parsedData = null;
+let modalStep = 0;
+
+// ─── Helpers ──────────────────────────────────────────
+function naira(n){ return "₦"+Number(n).toLocaleString("en-NG"); }
+function timeAgo(d){
+  const diff = Math.floor((new Date()-new Date(d))/86400000);
+  return diff===0?"Today":diff===1?"Yesterday":diff+"d ago";
+}
+
+function showToast(msg){
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+// ─── AI Call (goes through your secure backend) ───────
+async function callClaude(messages, system){
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, system }),
+  });
+  if(!res.ok) throw new Error("API error "+res.status);
+  const data = await res.json();
+  return data.content?.map(b=>b.text||"").join("") || "";
+}
+
+// ─── Tabs ─────────────────────────────────────────────
+function switchTab(t){
+  ["accounts","import","transactions","insight"].forEach(id=>{
+    document.getElementById("pane-"+id).style.display = id===t?"block":"none";
+    document.getElementById("tab-"+id).className = "tab"+(id===t?" active":"");
+  });
+  if(t==="transactions") renderTx();
+  if(t==="insight") renderInsight();
+  updateStats();
+}
+
+// ─── Stats ────────────────────────────────────────────
+function updateStats(){
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const gtbSpend = expenses.filter(e=>e.source==="gtb").reduce((s,e)=>s+e.amount,0);
+  const accSpend = expenses.filter(e=>e.source==="access").reduce((s,e)=>s+e.amount,0);
+  document.getElementById("totalSpent").textContent = naira(total);
+  document.getElementById("txCount").textContent = expenses.length;
+  document.getElementById("netBalance").textContent = naira(Math.max(0, 379700-total));
+  document.getElementById("gtbSpend").textContent = naira(gtbSpend);
+  document.getElementById("accessSpend").textContent = naira(accSpend);
+  const gtbPct = ((gtbSpend/284500)*100).toFixed(1);
+  const accPct = ((accSpend/95200)*100).toFixed(1);
+  document.getElementById("gtbBar").style.width = Math.min(gtbPct,100)+"%";
+  document.getElementById("accessBar").style.width = Math.min(accPct,100)+"%";
+  document.getElementById("gtbPct").textContent = gtbPct+"% of balance spent";
+  document.getElementById("accessPct").textContent = accPct+"% of balance spent";
+}
+
+// ─── Transactions ─────────────────────────────────────
+function renderTx(){
+  const list = document.getElementById("txList");
+  list.innerHTML = "";
+  [...expenses].reverse().forEach(e=>{
+    const bank = e.source==="gtb"?"🟠 GTBank":"🔴 Access Bank";
+    const div = document.createElement("div");
+    div.className = "tx";
+    div.innerHTML = `
+      <div class="tx-icon" style="background:${CAT_COLORS[e.category]}22">${CAT_ICONS[e.category]}</div>
+      <div class="tx-info">
+        <div class="tx-name">${e.name}</div>
+        <div class="tx-meta">
+          <span class="tx-date">${timeAgo(e.date)}</span>
+          <span class="tx-bank">${bank}</span>
+        </div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-amt" style="color:${CAT_COLORS[e.category]}">${naira(e.amount)}</div>
+        <button class="tx-edit" onclick="toggleEdit(${e.id})">edit cat</button>
+      </div>`;
+    list.appendChild(div);
+
+    const ed = document.createElement("div");
+    ed.id = "editor-"+e.id;
+    ed.style.cssText = "display:none;background:rgba(255,255,255,0.02);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06)";
+    ed.innerHTML = `<div class="cat-editor-label">CHANGE CATEGORY</div><div class="cat-pills">${
+      CATEGORIES.map(c=>`<button class="cat-pill" onclick="updateCat(${e.id},'${c}')" style="${e.category===c?`border:2px solid ${CAT_COLORS[c]};background:${CAT_COLORS[c]}22;color:${CAT_COLORS[c]}`:''}">${CAT_ICONS[c]} ${c}</button>`).join("")
+    }</div>`;
+    list.appendChild(ed);
+  });
+}
+
+function toggleEdit(id){
+  const ed = document.getElementById("editor-"+id);
+  ed.style.display = ed.style.display==="none"?"block":"none";
+}
+
+function updateCat(id,cat){
+  expenses = expenses.map(e=>e.id===id?{...e,category:cat}:e);
+  saveExpenses();
+  document.getElementById("editor-"+id).style.display="none";
+  renderTx(); updateStats();
+  showToast("Category updated ✓");
+}
+
+// ─── Import / Parse ───────────────────────────────────
+function setSample(i){ document.getElementById("alertInput").value=SAMPLES[i]; }
+
+async function parseAlert(){
+  const text = document.getElementById("alertInput").value.trim();
+  if(!text) return;
+  const btn = document.getElementById("parseBtn");
+  btn.textContent="PARSING..."; btn.disabled=true;
+  document.getElementById("parsedCard").style.display="none";
+  document.getElementById("parseError").style.display="none";
+
+  try {
+    const result = await callClaude(
+      [{ role:"user", content:`Extract transaction info from this Nigerian bank alert and return ONLY a JSON object with no markdown or explanation:\n{"name":"merchant name","amount":number,"category":"Food|Transport|Utilities|Health|Entertainment|Shopping|Education|Savings|Transfer|Other","date":"YYYY-MM-DD","bank":"bank name"}\n\nAlert: "${text}"\n\nJSON only:` }]
+    );
+    const clean = result.replace(/\`\`\`json|\`\`\`/g,"").trim();
+    parsedData = JSON.parse(clean);
+    showParsed();
+  } catch {
+    document.getElementById("parseError").style.display="block";
+  }
+  btn.textContent="🤖 PARSE ALERT"; btn.disabled=false;
+}
+
+function showParsed(){
+  document.getElementById("pName").textContent = parsedData.name||"—";
+  document.getElementById("pAmt").textContent = naira(parsedData.amount||0);
+  document.getElementById("pDate").textContent = parsedData.date||"—";
+  document.getElementById("pBank").textContent = parsedData.bank||"—";
+  document.getElementById("parsedCats").innerHTML = CATEGORIES.map(c=>`
+    <button class="cat-pill" onclick="selectParsedCat('${c}')"
+      style="${parsedData.category===c?`border:2px solid ${CAT_COLORS[c]};background:${CAT_COLORS[c]}22;color:${CAT_COLORS[c]}`:''}"
+    >${CAT_ICONS[c]} ${c}</button>`).join("");
+  document.getElementById("parsedCard").style.display="block";
+}
+
+function selectParsedCat(cat){ parsedData.category=cat; showParsed(); }
+
+function confirmParsed(){
+  if(!parsedData) return;
+  const src = parsedData.bank?.toLowerCase().includes("access")?"access":"gtb";
+  expenses.push({id:Date.now(),name:parsedData.name,amount:parsedData.amount,category:parsedData.category||"Other",date:parsedData.date||new Date().toISOString().split("T")[0],source:src});
+  saveExpenses();
+  document.getElementById("alertInput").value="";
+  document.getElementById("parsedCard").style.display="none";
+  parsedData=null;
+  updateStats();
+  showToast("Transaction added ✓");
+  switchTab("transactions");
+}
+
+// ─── Insight ──────────────────────────────────────────
+function renderInsight(){
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const catTotals = {};
+  CATEGORIES.forEach(c=>{ catTotals[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+e.amount,0); });
+  const sorted = Object.entries(catTotals).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const maxV = sorted[0]?.[1]||1;
+  document.getElementById("breakdown").innerHTML = sorted.map(([cat,val])=>`
+    <div class="breakdown-row">
+      <div class="br-header"><span>${CAT_ICONS[cat]} ${cat}</span><span style="font-weight:700;color:${CAT_COLORS[cat]}">${naira(val)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="background:${CAT_COLORS[cat]};width:${(val/maxV)*100}%"></div></div>
+      <div class="bar-note">${total>0?((val/total)*100).toFixed(1)+"% of total":""}</div>
+    </div>`).join("");
+}
+
+async function getInsight(){
+  const btn = document.getElementById("insightBtn");
+  btn.textContent="ANALYZING..."; btn.disabled=true;
+  document.getElementById("aiContent").innerHTML=`<div class="ai-placeholder pulse">Reading your transactions...</div>`;
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const summary = expenses.map(e=>`${e.name}: ${naira(e.amount)} (${e.category}) on ${e.date}`).join("\n");
+  try {
+    const text = await callClaude(
+      [{ role:"user", content:`Analyze these Nigerian bank transactions. Give brutally honest, specific advice in 3 short punchy sentences. Mention actual numbers and merchant names. End with ONE specific thing they can do this week to save money.\n\nTransactions:\n${summary}\nTotal spent: ${naira(total)}` }],
+      "You are a sharp, direct Nigerian personal finance advisor. Be specific, not generic. Use the actual data."
+    );
+    document.getElementById("aiContent").innerHTML=`<div class="ai-text">${text}</div>`;
+  } catch {
+    document.getElementById("aiContent").innerHTML=`<div class="ai-text" style="opacity:0.4">Failed to connect. Check your internet and try again.</div>`;
+  }
+  btn.textContent="🤖 ANALYZE MY SPENDING"; btn.disabled=false;
+}
+
+// ─── Modal ────────────────────────────────────────────
+const BANKS=["GTBank","Access Bank","First Bank","Zenith Bank","UBA","Kuda Bank","Opay","Sterling Bank"];
+function openModal(){ modalStep=0; renderModal(); document.getElementById("modal").style.display="flex"; }
+function closeModal(){ document.getElementById("modal").style.display="none"; }
+function renderModal(){
+  const el=document.getElementById("modalContent");
+  if(modalStep===0){
+    el.innerHTML=`<div class="label" style="margin-bottom:8px">LINK BANK ACCOUNT</div>
+    <div class="modal-title">Choose your bank</div>
+    <div class="modal-sub">Secured by Mono.co — credentials never stored</div>
+    ${BANKS.map(b=>`<button class="bank-option" onclick="modalStep=1;renderModal()">${b}</button>`).join("")}`;
+  } else if(modalStep===1){
+    el.innerHTML=`<div class="modal-title" style="margin-bottom:20px">Enter credentials</div>
+    <div class="input-group"><div class="input-label">Internet Banking Username</div><input type="text" placeholder="Enter username"/></div>
+    <div class="input-group"><div class="input-label">Password</div><input type="password" placeholder="Enter password"/></div>
+    <button class="btn-primary" onclick="modalStep=2;renderModal();setTimeout(closeModal,2000)">CONNECT SECURELY</button>`;
+  } else {
+    el.innerHTML=`<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">✅</div><div class="modal-title">Bank Linked!</div><div style="font-size:12px;opacity:0.4;margin-top:8px">Transactions will sync automatically</div></div>`;
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────
+updateStats();
+</script>
+</body>
+</html>
