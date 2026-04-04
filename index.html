@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#080C14"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Pocket Brain"/>
@@ -310,7 +311,9 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+(function(){const s=document.createElement('script');s.src='https://js.paystack.co/v1/inline.js';s.async=true;document.head.appendChild(s);})();
+</script>
 <script>
 // ══════════════════════════════════════════
 // ⚙️  REPLACE THESE WITH YOUR ACTUAL VALUES
@@ -329,8 +332,9 @@ const COLORS={Food:"#FF6B35",Transport:"#4ECDC4",Utilities:"#FFE66D",Health:"#A8
 const ICONS={Food:"🍔",Transport:"🚗",Utilities:"💡",Health:"💊",Entertainment:"🎬",Shopping:"🛍️",Education:"📚",Savings:"💰",Transfer:"↔️",Other:"📦"};
 const SAMPLES=["Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC LEKKI. Available balance: N284,500.00","Access Bank Alert: Debit of NGN 1,200.00 from your account ending 7743 for UBER TRIP on 03/04/2026. Bal: NGN 95,200.00","GTBank: Debit of N45,000.00 on 02-Apr-2026. Narration: TRANSFER TO JOHN ADEYEMI. Avail Bal: N288,000.00","Debit Alert! N8,900.00 deducted from GTBank Acct *4821 for DSTV SUBSCRIPTION on 01-Apr-2026. Bal: N333,000.00","Access Bank: Your account was debited N2,400.00 for PETROL STATION IKEJA on 01/04/2026. Avail bal: N96,400.00"];
 const BANKS_LIST=["GTBank","Access Bank","First Bank","Zenith Bank","UBA","Kuda Bank","Opay","Sterling Bank","Wema Bank","Stanbic IBTC"];
-const MOCK_BANKS=[{id:"gtb",name:"GTBank",logo:"🟠",account:"**** 4821",balance:284500,color:"#FF6600"},{id:"access",name:"Access Bank",logo:"🔴",account:"**** 7743",balance:95200,color:"#CC0000"}];
-
+const BANK_META={"GTBank":{logo:"🟠",color:"#FF6600"},"Access Bank":{logo:"🔴",color:"#CC0000"},"First Bank":{logo:"🔵",color:"#003087"},"Zenith Bank":{logo:"⚫",color:"#333333"},"UBA":{logo:"🟤",color:"#CC0000"},"Kuda Bank":{logo:"🟣",color:"#7F00FF"},"Opay":{logo:"🟢",color:"#00AA44"},"Sterling Bank":{logo:"🔶",color:"#FF8C00"},"Wema Bank":{logo:"🟦",color:"#0066CC"},"Stanbic IBTC":{logo:"🔷",color:"#0044AA"}};
+let linkedBanks=JSON.parse(localStorage.getItem("pb_banks")||"[]");
+let selectedBankName="";
 let currentUser=null,userPro=false,expenses=[],parsedData=null,bankModalStep=0;
 
 // ── INIT ──────────────────────────────────
@@ -476,7 +480,7 @@ function updateStats(){
   const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
   const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
   const top=Object.entries(catT).sort((a,b)=>b[1]-a[1])[0];
-  const totalBal=MOCK_BANKS.reduce((s,b)=>s+b.balance,0);
+  const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
   document.getElementById("heroBalance").textContent=naira(Math.max(0,totalBal-total));
   document.getElementById("heroSub").textContent=`${expenses.length} transaction${expenses.length!==1?"s":""} tracked`;
   document.getElementById("statSpent").textContent=naira(total);
@@ -504,9 +508,19 @@ function switchTab(t){
 
 // ── BANK CARDS ────────────────────────────
 function renderBankCards(){
-  document.getElementById("bankCards").innerHTML=MOCK_BANKS.map(bank=>{
+  if(linkedBanks.length===0){
+    document.getElementById("bankCards").innerHTML=`
+      <div style="text-align:center;padding:32px 20px;color:var(--muted)">
+        <div style="font-size:40px;margin-bottom:12px">🏦</div>
+        <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No banks linked yet</div>
+        <div style="font-size:12px;line-height:1.6">Tap below to add your bank account and start tracking your spending</div>
+      </div>`;
+    return;
+  }
+  document.getElementById("bankCards").innerHTML=linkedBanks.map(bank=>{
     const spent=expenses.filter(e=>e.source===bank.id).reduce((s,e)=>s+Number(e.amount),0);
-    const pct=((spent/bank.balance)*100).toFixed(1);
+    const bal=Number(bank.balance||0);
+    const pct=bal>0?((spent/bal)*100).toFixed(1):"0.0";
     return`<div class="bank-card" style="background:linear-gradient(135deg,${bank.color}18,rgba(255,255,255,0.02));border:1px solid ${bank.color}30">
       <div class="bank-header">
         <div class="bank-logo-row"><div class="bank-icon" style="background:${bank.color}25">${bank.logo}</div>
@@ -514,7 +528,7 @@ function renderBankCards(){
         <div class="linked-badge">LINKED ✓</div>
       </div>
       <div class="bank-nums">
-        <div><div class="num-label">BALANCE</div><div class="num-val">${naira(bank.balance)}</div></div>
+        <div><div class="num-label">BALANCE</div><div class="num-val">${naira(bal)}</div></div>
         <div style="text-align:right"><div class="num-label">TRACKED SPEND</div><div class="num-val" style="color:var(--danger)">${naira(spent)}</div></div>
       </div>
       <div class="bar-track"><div class="bar-fill" style="background:${bank.color};width:${Math.min(pct,100)}%"></div></div>
@@ -670,27 +684,47 @@ function updateProfileUI(){
 }
 
 // ── BANK MODAL ────────────────────────────
-function openBankModal(){bankModalStep=0;renderBankModal();document.getElementById("bankModal").classList.remove("hidden");}
+function openBankModal(){bankModalStep=0;selectedBankName="";renderBankModal();document.getElementById("bankModal").classList.remove("hidden");}
 function closeBankModal(){document.getElementById("bankModal").classList.add("hidden");}
 function renderBankModal(){
   const el=document.getElementById("bankModalContent");
   if(bankModalStep===0){
     el.innerHTML=`<div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">LINK BANK</div>
     <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px">Choose your bank</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Secured by Mono.co — credentials never stored by us</div>
-    ${BANKS_LIST.map(b=>`<button class="bank-option" onclick="bankModalStep=1;renderBankModal()">${b}</button>`).join("")}`;
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Select the bank you want to track</div>
+    ${BANKS_LIST.map(b=>`<button class="bank-option" onclick="selectBank('${b}')">${BANK_META[b]?.logo||'🏦'} ${b}</button>`).join("")}`;
   }else if(bankModalStep===1){
-    el.innerHTML=`<div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Enter credentials</div>
-    <div class="field"><div class="field-label">Internet Banking Username</div><input type="text" placeholder="Username"/></div>
-    <div class="field"><div class="field-label">Password</div><input type="password" placeholder="Password"/></div>
-    <button class="btn btn-accent" onclick="bankModalStep=2;renderBankModal();setTimeout(closeBankModal,2500)">CONNECT SECURELY</button>`;
+    el.innerHTML=`<div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px">${selectedBankName}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Enter your account details</div>
+    <div class="field"><div class="field-label">Last 4 digits of account number</div><input type="number" id="modalAccNum" placeholder="e.g. 4821" maxlength="4"/></div>
+    <div class="field"><div class="field-label">Current Balance (₦)</div><input type="number" id="modalBalance" placeholder="e.g. 150000"/></div>
+    <button class="btn btn-accent" onclick="confirmBankLink()">LINK BANK ✓</button>
+    <button onclick="bankModalStep=0;renderBankModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">← Back</button>`;
   }else{
     el.innerHTML=`<div style="text-align:center;padding:24px 0">
       <div style="font-size:48px;margin-bottom:12px">✅</div>
-      <div style="font-family:var(--font-d);font-size:22px;font-weight:700">Bank Linked!</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">Transactions will sync automatically</div>
+      <div style="font-family:var(--font-d);font-size:22px;font-weight:700">${selectedBankName} Linked!</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Your account is now being tracked</div>
     </div>`;
   }
+}
+
+function selectBank(name){
+  selectedBankName=name;
+  bankModalStep=1;
+  renderBankModal();
+}
+
+function confirmBankLink(){
+  const accNum=document.getElementById("modalAccNum").value.trim();
+  const balance=parseFloat(document.getElementById("modalBalance").value)||0;
+  if(!accNum){showToast("Enter last 4 digits of account number","error");return;}
+  const meta=BANK_META[selectedBankName]||{logo:"🏦",color:"#6366F1"};
+  const newBank={id:"bank_"+Date.now(),name:selectedBankName,logo:meta.logo,color:meta.color,account:"**** "+accNum,balance:balance};
+  linkedBanks.push(newBank);
+  localStorage.setItem("pb_banks",JSON.stringify(linkedBanks));
+  bankModalStep=2;renderBankModal();
+  setTimeout(()=>{closeBankModal();renderBankCards();updateStats();},2000);
 }
 
 // ── START ─────────────────────────────────
