@@ -338,12 +338,19 @@ let currentUser=null,userPro=false,expenses=[],parsedData=null,bankModalStep=0;
 // ── INIT ──────────────────────────────────
 async function init(){
   try{
-    // Handle password reset redirect
-    const hash = window.location.hash;
-    if(hash && hash.includes("access_token")){
-      // User came from password reset email - show auth so they can set new password
-      showAuth();
-      return;
+    // Check if user came from password reset email
+    const hash=window.location.hash;
+    if(hash&&hash.includes("type=recovery")){
+      // Extract tokens and set session
+      const params=new URLSearchParams(hash.substring(1));
+      const accessToken=params.get("access_token");
+      const refreshToken=params.get("refresh_token");
+      if(accessToken){
+        await sb.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
+        // Show password update screen
+        showUpdatePassword();
+        return;
+      }
     }
     const{data:{session},error}=await sb.auth.getSession();
     if(error){console.error("Session error:",error);showAuth();return;}
@@ -357,6 +364,62 @@ async function init(){
   }catch(e){
     console.error("Init error:",e);
     showAuth();
+  }
+}
+
+function showUpdatePassword(){
+  document.getElementById("authScreen").style.display="none";
+  document.getElementById("forgotScreen").style.display="none";
+  document.getElementById("appScreen").style.display="none";
+  // Create update password screen dynamically
+  let el=document.getElementById("updatePwScreen");
+  if(!el){
+    el=document.createElement("div");
+    el.id="updatePwScreen";
+    el.className="screen";
+    el.style.cssText="display:flex;align-items:center;justify-content:center;padding:32px 24px";
+    el.innerHTML=`
+      <div class="glow"></div>
+      <div style="width:100%;max-width:360px">
+        <div class="auth-logo">Pocket Brain</div>
+        <div class="auth-tagline">SET NEW PASSWORD</div>
+        <div class="auth-card">
+          <div class="field"><div class="field-label">New Password</div><input type="password" id="newPassword" placeholder="Min. 6 characters"/></div>
+          <div class="field"><div class="field-label">Confirm Password</div><input type="password" id="confirmPassword" placeholder="Repeat password"/></div>
+          <button class="btn btn-accent" onclick="updatePassword()">UPDATE PASSWORD</button>
+          <div class="auth-msg" id="updatePwMsg"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+  }else{
+    el.style.display="flex";
+  }
+}
+
+async function updatePassword(){
+  const pw=document.getElementById("newPassword").value;
+  const confirm=document.getElementById("confirmPassword").value;
+  const msg=document.getElementById("updatePwMsg");
+  msg.textContent="";
+  if(pw.length<6){msg.style.color="var(--danger)";msg.textContent="Password must be at least 6 characters.";return;}
+  if(pw!==confirm){msg.style.color="var(--danger)";msg.textContent="Passwords do not match.";return;}
+  const btn=event.target;
+  btn.innerHTML='<span class="spinner"></span>UPDATING...';btn.disabled=true;
+  try{
+    const{error}=await sb.auth.updateUser({password:pw});
+    if(error)throw error;
+    msg.style.color="var(--accent2)";
+    msg.textContent="✓ Password updated! Redirecting...";
+    setTimeout(()=>{
+      document.getElementById("updatePwScreen").style.display="none";
+      // Clear hash from URL
+      history.replaceState(null,null," ");
+      showAuth();
+    },2000);
+  }catch(e){
+    msg.style.color="var(--danger)";
+    msg.textContent=e.message||"Something went wrong.";
+    btn.innerHTML="UPDATE PASSWORD";btn.disabled=false;
   }
 }
 
@@ -412,7 +475,7 @@ async function sendReset(){
   btn.innerHTML='<span class="spinner"></span>SENDING...';btn.disabled=true;
   try{
     const{error}=await sb.auth.resetPasswordForEmail(email,{
-      redirectTo: window.location.origin+"/reset"
+      redirectTo: window.location.origin
     });
     if(error)throw error;
     msg.style.color="var(--accent2)";
@@ -541,7 +604,7 @@ function renderBankCards(){
       </div>`;
     return;
   }
-  document.getElementById("bankCards").innerHTML=linkedBanks.map(bank=>{
+  document.getElementById("bankCards").innerHTML=linkedBanks.map((bank,i)=>{
     const spent=expenses.filter(e=>e.source===bank.id).reduce((s,e)=>s+Number(e.amount),0);
     const bal=Number(bank.balance||0);
     const pct=bal>0?((spent/bal)*100).toFixed(1):"0.0";
@@ -549,7 +612,10 @@ function renderBankCards(){
       <div class="bank-header">
         <div class="bank-logo-row"><div class="bank-icon" style="background:${bank.color}25">${bank.logo}</div>
         <div><div class="bank-name">${bank.name}</div><div class="bank-acc">${bank.account}</div></div></div>
-        <div class="linked-badge">LINKED ✓</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="linked-badge">LINKED ✓</div>
+          <button onclick="unlinkBank(${i})" style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);color:#FF6B35;border-radius:8px;padding:4px 8px;font-size:9px;font-family:var(--font-m);cursor:pointer;letter-spacing:1px">UNLINK</button>
+        </div>
       </div>
       <div class="bank-nums">
         <div><div class="num-label">BALANCE</div><div class="num-val">${naira(bal)}</div></div>
@@ -731,6 +797,14 @@ function renderBankModal(){
       <div style="font-size:12px;color:var(--muted);margin-top:8px">Your account is now being tracked</div>
     </div>`;
   }
+}
+
+function unlinkBank(index){
+  if(!confirm(`Remove ${linkedBanks[index].name}? This won't delete your transactions.`))return;
+  linkedBanks.splice(index,1);
+  localStorage.setItem("pb_banks",JSON.stringify(linkedBanks));
+  renderBankCards();updateStats();
+  showToast("Bank unlinked");
 }
 
 function selectBank(name){
