@@ -151,13 +151,8 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 </head>
 <body>
 
-<div class="loading-screen" id="loadingScreen">
-  <div class="loading-logo">PB</div>
-  <div style="font-size:11px;color:var(--muted);letter-spacing:3px">LOADING...</div>
-</div>
-
 <!-- AUTH -->
-<div class="screen hidden" id="authScreen">
+<div class="screen" id="authScreen">
   <div class="glow"></div>
   <div class="auth-logo">Pocket Brain</div>
   <div class="auth-tagline">YOUR MONEY. CLEAR.</div>
@@ -352,9 +347,9 @@ async function init(){
 }
 
 function showApp(){
-  document.getElementById("loadingScreen").style.display="none";
   document.getElementById("authScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
+  document.getElementById("forgotScreen").classList.add("hidden");
   const h=new Date().getHours();
   const name=(currentUser?.user_metadata?.full_name||"").split(" ")[0]||"there";
   const g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
@@ -364,22 +359,18 @@ function showApp(){
 }
 
 function showAuth(){
-  document.getElementById("loadingScreen").style.display="none";
   document.getElementById("authScreen").classList.remove("hidden");
   document.getElementById("appScreen").classList.add("hidden");
   document.getElementById("forgotScreen").classList.add("hidden");
 }
 
-// Hide loading screen immediately if JS runs — prevents permanent black screen
-document.addEventListener("DOMContentLoaded",()=>{
-  setTimeout(()=>{
-    const ls=document.getElementById("loadingScreen");
-    if(ls&&ls.style.display!=="none"){
-      // If still showing after 5s, force show auth
-      showAuth();
-    }
-  },5000);
-});
+// Safety net - if init takes too long, show auth
+setTimeout(()=>{
+  if(document.getElementById("authScreen").classList.contains("hidden")&&
+     document.getElementById("appScreen").classList.contains("hidden")){
+    showAuth();
+  }
+},4000);
 
 function showForgot(){
   document.getElementById("authScreen").classList.add("hidden");
