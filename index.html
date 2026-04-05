@@ -248,9 +248,74 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
     <div id="pane-transactions" class="hidden"><div id="txList"></div></div>
     <!-- INSIGHT -->
     <div id="pane-insight" class="hidden">
+
+      <!-- Spending Personality Card -->
+      <div class="card" id="personalityCard">
+        <div class="card-label">YOUR SPENDING PERSONALITY</div>
+        <div id="personalityContent"><div class="ai-placeholder" style="padding:12px 0">Tap analyze to reveal your personality</div></div>
+      </div>
+
+      <!-- Broke Alert -->
+      <div class="card">
+        <div class="card-label">💸 BROKE ALERT</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Get notified inside the app when balance drops below your threshold</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1">
+            <div class="field-label" style="font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px">ALERT WHEN BALANCE BELOW</div>
+            <input type="number" id="brokeThreshold" placeholder="e.g. 5000" value="${localStorage.getItem('pb_broke_threshold')||''}"
+              style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font-m);font-size:13px;outline:none"/>
+          </div>
+          <button onclick="saveBrokeAlert()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-family:var(--font-m);font-size:11px;cursor:pointer;font-weight:600;margin-top:18px">SAVE</button>
+        </div>
+        <div id="brokeAlertMsg" style="font-size:11px;margin-top:8px;color:var(--accent2)"></div>
+      </div>
+
+      <!-- Bill Detector -->
+      <div class="card">
+        <div class="card-label">🔁 RECURRING BILLS DETECTED</div>
+        <div id="billDetector"><div style="font-size:12px;color:var(--muted)">Add transactions to detect recurring bills</div></div>
+      </div>
+
+      <!-- Category Budgets -->
+      <div class="card">
+        <div class="card-label">🎯 CATEGORY BUDGETS <span class="pro-badge">PRO</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Set monthly spending limits per category</div>
+        <div id="budgetsList"></div>
+        <button onclick="handleBudgetClick()" style="width:100%;padding:11px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:12px;color:var(--accent);font-family:var(--font-m);font-size:11px;cursor:pointer;letter-spacing:1px;margin-top:8px">+ SET BUDGET</button>
+      </div>
+
+      <!-- Savings Goals -->
+      <div class="card">
+        <div class="card-label">🎯 SAVINGS GOALS <span class="pro-badge">PRO</span></div>
+        <div id="goalsList"><div style="font-size:12px;color:var(--muted)">No goals set yet</div></div>
+        <button onclick="handleGoalClick()" style="width:100%;padding:11px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:12px;color:var(--accent);font-family:var(--font-m);font-size:11px;cursor:pointer;letter-spacing:1px;margin-top:8px">+ ADD GOAL</button>
+      </div>
+
+      <!-- Spending Forecast -->
+      <div class="card">
+        <div class="card-label">📈 SPENDING FORECAST <span class="pro-badge">PRO</span></div>
+        <div id="forecastContent"><div style="font-size:12px;color:var(--muted)">Add more transactions to see forecast</div></div>
+      </div>
+
+      <!-- Weekly Summary -->
+      <div class="card">
+        <div class="card-label">📋 WEEKLY SUMMARY <span class="pro-badge">PRO</span></div>
+        <div id="weeklySummaryContent"><div class="ai-placeholder" style="padding:8px 0">Tap to generate this week's summary</div></div>
+        <button onclick="handleWeeklySummaryClick()" class="btn btn-accent" id="weeklyBtn" style="margin-top:12px">📋 GENERATE WEEKLY SUMMARY</button>
+      </div>
+
+      <!-- Merchant Intelligence -->
+      <div class="card">
+        <div class="card-label">🏪 MERCHANT INTEL <span class="pro-badge">PRO</span></div>
+        <div id="merchantIntel"><div style="font-size:12px;color:var(--muted)">Add transactions to see merchant insights</div></div>
+      </div>
+
+      <!-- Breakdown -->
       <div class="card"><div class="card-label">Spending Breakdown</div><div id="breakdown"></div></div>
+
+      <!-- AI Advisor -->
       <div class="ai-box">
-        <div class="ai-label">AI FINANCE ADVISOR</div>
+        <div class="ai-label">AI FINANCE ADVISOR <span class="pro-badge">PRO</span></div>
         <div class="ai-sub">Personalized advice from your actual transactions</div>
         <div id="aiContent"><div class="ai-placeholder">Tap below to get your analysis</div></div>
       </div>
@@ -305,6 +370,39 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 <!-- BANK MODAL -->
 <div class="modal-overlay hidden" id="bankModal" onclick="closeBankModal()">
   <div class="sheet" onclick="event.stopPropagation()"><div id="bankModalContent"></div></div>
+</div>
+
+<!-- BUDGET MODAL -->
+<div class="modal-overlay hidden" id="budgetModal" onclick="closeBudgetModal()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">SET BUDGET</div>
+    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Monthly Category Limit</div>
+    <div class="field">
+      <div class="field-label">Category</div>
+      <select id="budgetCat" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none">
+        <option value="">Choose category</option>
+      </select>
+    </div>
+    <div class="field">
+      <div class="field-label">Monthly Limit (₦)</div>
+      <input type="number" id="budgetAmount" placeholder="e.g. 20000" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/>
+    </div>
+    <button class="btn btn-accent" onclick="saveBudget()">SAVE BUDGET</button>
+    <button onclick="closeBudgetModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-overlay hidden" id="goalModal" onclick="closeGoalModal()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">NEW GOAL</div>
+    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Set a Savings Goal</div>
+    <div class="field"><div class="field-label">Goal Name</div><input type="text" id="goalName" placeholder="e.g. New iPhone, Rent, Travel" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
+    <div class="field"><div class="field-label">Target Amount (₦)</div><input type="number" id="goalTarget" placeholder="e.g. 150000" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
+    <div class="field"><div class="field-label">Amount Saved So Far (₦)</div><input type="number" id="goalSaved" placeholder="0" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
+    <button class="btn btn-accent" onclick="saveGoal()">SAVE GOAL</button>
+    <button onclick="closeGoalModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">Cancel</button>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -713,6 +811,17 @@ function renderInsight(){
       <div class="bar-track"><div class="bar-fill" style="background:${COLORS[cat]};width:${(val/maxV)*100}%"></div></div>
       <div class="bar-note">${total>0?((val/total)*100).toFixed(1)+"% of total":""}</div>
     </div>`).join(""):`<div style="color:var(--muted);font-size:13px">No data yet</div>`;
+  // Render all new features
+  renderPersonality();
+  detectBills();
+  renderForecast();
+  renderMerchantIntel();
+  renderBudgets();
+  renderGoals();
+  checkBrokeAlert();
+  // Restore broke threshold input
+  const t=localStorage.getItem("pb_broke_threshold");
+  if(t)document.getElementById("brokeThreshold").value=t;
 }
 
 function handleInsightClick(){if(!userPro){showPaywall();return;}getInsight();}
@@ -823,6 +932,259 @@ function confirmBankLink(){
   localStorage.setItem("pb_banks",JSON.stringify(linkedBanks));
   bankModalStep=2;renderBankModal();
   setTimeout(()=>{closeBankModal();renderBankCards();updateStats();},2000);
+}
+
+// ── SPENDING PERSONALITY ──────────────────
+const PERSONALITIES=[
+  {name:"Food Goblin 🍔",condition:c=>c==="Food",msg:"Most of your money goes to food. You eat well — maybe too well."},
+  {name:"Road Warrior 🚗",condition:c=>c==="Transport",msg:"Transport is eating your budget. Consider carpooling or working closer to home."},
+  {name:"Entertainment King 🎬",condition:c=>c==="Entertainment",msg:"You spend heavily on fun. Life is short, but your savings shouldn't be."},
+  {name:"Bill Payer 💡",condition:c=>c==="Utilities",msg:"Your utilities are your biggest expense. Time to audit those subscriptions."},
+  {name:"Shopaholic 🛍️",condition:c=>c==="Shopping",msg:"Shopping is your weakness. You treat yourself well — maybe a little too well."},
+  {name:"Transfer Machine ↔️",condition:c=>c==="Transfer",msg:"You move money around a lot. Make sure it's going somewhere useful."},
+  {name:"Balanced Spender ⚖️",condition:()=>true,msg:"Your spending is spread across categories. You're relatively balanced."},
+];
+
+function getPersonality(){
+  const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
+  const top=Object.entries(catT).sort((a,b)=>b[1]-a[1])[0];
+  if(!top||top[1]===0)return null;
+  return PERSONALITIES.find(p=>p.condition(top[0]))||PERSONALITIES[PERSONALITIES.length-1];
+}
+
+function renderPersonality(){
+  const p=getPersonality();
+  const el=document.getElementById("personalityContent");
+  if(!p||expenses.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add transactions to reveal your spending personality</div>`;return;}
+  el.innerHTML=`
+    <div style="text-align:center;padding:8px 0">
+      <div style="font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--accent);margin-bottom:8px">${p.name}</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6">${p.msg}</div>
+    </div>`;
+}
+
+// ── BROKE ALERT ───────────────────────────
+function saveBrokeAlert(){
+  const val=document.getElementById("brokeThreshold").value;
+  if(!val){showToast("Enter an amount","error");return;}
+  localStorage.setItem("pb_broke_threshold",val);
+  document.getElementById("brokeAlertMsg").textContent=`✓ You'll be alerted when balance drops below ${naira(val)}`;
+  showToast("Broke alert saved ✓");
+}
+
+function checkBrokeAlert(){
+  const threshold=parseFloat(localStorage.getItem("pb_broke_threshold")||"0");
+  if(!threshold)return;
+  const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
+  const totalSpent=expenses.reduce((s,e)=>s+Number(e.amount),0);
+  const net=totalBal-totalSpent;
+  if(net<threshold&&net>=0){
+    showToast(`⚠️ Balance is ${naira(net)} — below your ₦${threshold.toLocaleString()} alert!`,"error");
+  }
+}
+
+// ── BILL DETECTOR ─────────────────────────
+function detectBills(){
+  const el=document.getElementById("billDetector");
+  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add more transactions to detect recurring bills</div>`;return;}
+  const nameCounts={};
+  expenses.forEach(e=>{
+    const key=e.name.toLowerCase().trim();
+    nameCounts[key]=(nameCounts[key]||0)+1;
+  });
+  const recurring=Object.entries(nameCounts).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
+  if(recurring.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No recurring bills detected yet</div>`;return;}
+  el.innerHTML=recurring.map(([name,count])=>{
+    const exps=expenses.filter(e=>e.name.toLowerCase().trim()===name);
+    const avg=exps.reduce((s,e)=>s+Number(e.amount),0)/exps.length;
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600;text-transform:capitalize">${name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${count}x detected</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700;color:var(--danger)">${naira(avg)}</div>
+        <div style="font-size:10px;color:var(--muted)">avg/time</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── SPENDING FORECAST ─────────────────────
+function renderForecast(){
+  const el=document.getElementById("forecastContent");
+  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add at least 3 transactions to see forecast</div>`;return;}
+  const now=new Date();
+  const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const dayOfMonth=now.getDate();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split("T")[0];
+  const thisMonthExp=expenses.filter(e=>e.date>=monthStart);
+  const spentSoFar=thisMonthExp.reduce((s,e)=>s+Number(e.amount),0);
+  const dailyRate=dayOfMonth>0?spentSoFar/dayOfMonth:0;
+  const projectedTotal=dailyRate*daysInMonth;
+  const daysLeft=daysInMonth-dayOfMonth;
+  const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
+  el.innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1;background:rgba(255,107,53,0.1);border-radius:12px;padding:12px;border:1px solid rgba(255,107,53,0.2)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">PROJECTED SPEND</div>
+        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--danger)">${naira(Math.round(projectedTotal))}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">this month</div>
+      </div>
+      <div style="flex:1;background:rgba(99,102,241,0.1);border-radius:12px;padding:12px;border:1px solid rgba(99,102,241,0.2)">
+        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">DAILY RATE</div>
+        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--accent)">${naira(Math.round(dailyRate))}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">per day</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6">
+      At your current rate, you'll spend <strong style="color:var(--text)">${naira(Math.round(projectedTotal))}</strong> this month. 
+      ${daysLeft} days left. ${dailyRate>0?`Try to keep daily spending under ${naira(Math.round(dailyRate*0.8))} to save more.`:""}
+    </div>`;
+}
+
+// ── MERCHANT INTEL ────────────────────────
+function renderMerchantIntel(){
+  const el=document.getElementById("merchantIntel");
+  if(expenses.length<2){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add more transactions to see merchant insights</div>`;return;}
+  const merchants={};
+  expenses.forEach(e=>{
+    const k=e.name;
+    if(!merchants[k])merchants[k]={total:0,count:0};
+    merchants[k].total+=Number(e.amount);
+    merchants[k].count++;
+  });
+  const top=Object.entries(merchants).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  el.innerHTML=top.map(([name,data])=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600">${name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${data.count} transaction${data.count>1?"s":""}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700;color:var(--danger)">${naira(data.total)}</div>
+        <div style="font-size:10px;color:var(--muted)">${naira(Math.round(data.total/data.count))} avg</div>
+      </div>
+    </div>`).join("");
+}
+
+// ── WEEKLY SUMMARY ────────────────────────
+function handleWeeklySummaryClick(){if(!userPro){showPaywall();return;}generateWeeklySummary();}
+
+async function generateWeeklySummary(){
+  const btn=document.getElementById("weeklyBtn");
+  btn.innerHTML='<span class="spinner"></span>GENERATING...';btn.disabled=true;
+  const weekAgo=new Date(Date.now()-7*24*60*60*1000).toISOString().split("T")[0];
+  const weekExp=expenses.filter(e=>e.date>=weekAgo);
+  if(weekExp.length===0){
+    document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--muted)">No transactions in the last 7 days</div>`;
+    btn.innerHTML="📋 GENERATE WEEKLY SUMMARY";btn.disabled=false;return;
+  }
+  const total=weekExp.reduce((s,e)=>s+Number(e.amount),0);
+  const summary=weekExp.map(e=>`${e.name}: ${naira(e.amount)} (${e.category})`).join("\n");
+  try{
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({system:"You are a sharp Nigerian finance advisor. Be concise, specific, and direct.",
+        messages:[{role:"user",content:`Generate a brief weekly spending summary (max 5 bullet points) for these transactions from the past 7 days. Include total, top category, and one key observation.\n\n${summary}\n\nTotal: ${naira(total)}`}]})});
+    const data=await res.json();
+    const text=data.content?.[0]?.text||"Could not generate summary.";
+    document.getElementById("weeklySummaryContent").innerHTML=`
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">LAST 7 DAYS · ${weekExp.length} transactions · ${naira(total)}</div>
+      <div style="font-size:13px;line-height:1.8">${text}</div>`;
+  }catch{document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--muted)">Failed. Try again.</div>`;}
+  btn.innerHTML="📋 REGENERATE";btn.disabled=false;
+}
+
+// ── CATEGORY BUDGETS ──────────────────────
+let budgets=JSON.parse(localStorage.getItem("pb_budgets")||"{}");
+
+function handleBudgetClick(){if(!userPro){showPaywall();return;}openBudgetModal();}
+function openBudgetModal(){
+  const sel=document.getElementById("budgetCat");
+  sel.innerHTML=`<option value="">Choose category</option>`+CATS.map(c=>`<option value="${c}">${ICONS[c]} ${c}</option>`).join("");
+  document.getElementById("budgetModal").classList.remove("hidden");
+}
+function closeBudgetModal(){document.getElementById("budgetModal").classList.add("hidden");}
+function saveBudget(){
+  const cat=document.getElementById("budgetCat").value;
+  const amt=parseFloat(document.getElementById("budgetAmount").value)||0;
+  if(!cat){showToast("Choose a category","error");return;}
+  if(!amt){showToast("Enter an amount","error");return;}
+  budgets[cat]=amt;
+  localStorage.setItem("pb_budgets",JSON.stringify(budgets));
+  closeBudgetModal();renderBudgets();showToast(`${cat} budget set ✓`);
+}
+
+function renderBudgets(){
+  const el=document.getElementById("budgetsList");
+  const entries=Object.entries(budgets);
+  if(entries.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No budgets set yet</div>`;return;}
+  const now=new Date();
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split("T")[0];
+  el.innerHTML=entries.map(([cat,limit])=>{
+    const spent=expenses.filter(e=>e.category===cat&&e.date>=monthStart).reduce((s,e)=>s+Number(e.amount),0);
+    const pct=Math.min((spent/limit)*100,100);
+    const over=spent>limit;
+    return`<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px">
+        <span>${ICONS[cat]} ${cat}</span>
+        <span style="color:${over?"var(--danger)":"var(--muted)"}">${naira(spent)} / ${naira(limit)}</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
+        <div style="height:100%;border-radius:3px;background:${over?"var(--danger)":COLORS[cat]};width:${pct}%;transition:width 0.8s ease"></div>
+      </div>
+      ${over?`<div style="font-size:10px;color:var(--danger);margin-top:3px">⚠️ Over budget by ${naira(spent-limit)}</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+// ── SAVINGS GOALS ─────────────────────────
+let goals=JSON.parse(localStorage.getItem("pb_goals")||"[]");
+
+function handleGoalClick(){if(!userPro){showPaywall();return;}openGoalModal();}
+function openGoalModal(){document.getElementById("goalModal").classList.remove("hidden");}
+function closeGoalModal(){document.getElementById("goalModal").classList.add("hidden");}
+function saveGoal(){
+  const name=document.getElementById("goalName").value.trim();
+  const target=parseFloat(document.getElementById("goalTarget").value)||0;
+  const saved=parseFloat(document.getElementById("goalSaved").value)||0;
+  if(!name){showToast("Enter a goal name","error");return;}
+  if(!target){showToast("Enter a target amount","error");return;}
+  goals.push({id:Date.now(),name,target,saved});
+  localStorage.setItem("pb_goals",JSON.stringify(goals));
+  closeGoalModal();renderGoals();showToast("Goal added ✓");
+}
+
+function renderGoals(){
+  const el=document.getElementById("goalsList");
+  if(goals.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No goals set yet</div>`;return;}
+  const monthlySpend=expenses.reduce((s,e)=>s+Number(e.amount),0);
+  const avgMonthlySavings=monthlySpend>0?monthlySpend*0.2:0;
+  el.innerHTML=goals.map((g,i)=>{
+    const pct=Math.min((g.saved/g.target)*100,100);
+    const remaining=g.target-g.saved;
+    const months=avgMonthlySavings>0?Math.ceil(remaining/avgMonthlySavings):null;
+    return`<div style="margin-bottom:16px;background:rgba(255,255,255,0.02);border-radius:12px;padding:14px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-family:var(--font-d);font-weight:700;font-size:14px">${g.name}</div>
+        <button onclick="deleteGoal(${i})" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font-m)">remove</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
+        <span style="color:var(--muted)">Saved: <strong style="color:var(--accent2)">${naira(g.saved)}</strong></span>
+        <span style="color:var(--muted)">Goal: <strong style="color:var(--text)">${naira(g.target)}</strong></span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:6px">
+        <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:${pct}%;transition:width 0.8s ease"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">${pct.toFixed(0)}% complete${months?` · ~${months} months to go`:" · Start saving to see estimate"}</div>
+    </div>`;
+  }).join("");
+}
+
+function deleteGoal(i){
+  goals.splice(i,1);
+  localStorage.setItem("pb_goals",JSON.stringify(goals));
+  renderGoals();showToast("Goal removed");
 }
 
 // ── START ─────────────────────────────────
