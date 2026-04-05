@@ -152,7 +152,7 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 <body>
 
 <!-- AUTH -->
-<div class="screen" id="authScreen">
+<div class="screen" id="authScreen" style="display:flex">
   <div class="glow"></div>
   <div class="auth-logo">Pocket Brain</div>
   <div class="auth-tagline">YOUR MONEY. CLEAR.</div>
@@ -173,7 +173,7 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 </div>
 
 <!-- FORGOT PASSWORD SCREEN -->
-<div class="screen hidden" id="forgotScreen">
+<div class="screen" id="forgotScreen" style="display:none">
   <div class="glow"></div>
   <div class="auth-logo">Pocket Brain</div>
   <div class="auth-tagline">RESET YOUR PASSWORD</div>
@@ -186,9 +186,10 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
       <span onclick="showLogin()" style="font-size:11px;color:var(--accent);cursor:pointer;letter-spacing:1px">← Back to login</span>
     </div>
   </div>
+</div>
 
 <!-- APP -->
-<div class="screen hidden" id="appScreen">
+<div class="screen" id="appScreen" style="display:none">
   <div class="glow"></div>
   <div class="app-scroll" id="appScroll">
     <div class="app-header">
@@ -361,48 +362,46 @@ async function init(){
 
 function showApp(){
   try{
-    document.getElementById("authScreen").classList.add("hidden");
-    document.getElementById("forgotScreen").classList.add("hidden");
-    document.getElementById("appScreen").classList.remove("hidden");
+    document.getElementById("authScreen").style.display="none";
+    document.getElementById("forgotScreen").style.display="none";
+    document.getElementById("appScreen").style.display="flex";
     const h=new Date().getHours();
     const name=(currentUser?.user_metadata?.full_name||"").split(" ")[0]||"there";
     const g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
     document.getElementById("greetingText").textContent=`${g}, ${name} 👋`;
     userPro=currentUser?.user_metadata?.is_pro===true;
-    try{updateStats();}catch(e){console.error("updateStats error:",e);}
-    try{renderBankCards();}catch(e){console.error("renderBankCards error:",e);}
-  }catch(e){
-    console.error("showApp error:",e);
-  }
+    try{updateStats();}catch(e){console.error("updateStats:",e);}
+    try{renderBankCards();}catch(e){console.error("renderBankCards:",e);}
+  }catch(e){console.error("showApp:",e);}
 }
 
 function showAuth(){
-  document.getElementById("authScreen").classList.remove("hidden");
-  document.getElementById("appScreen").classList.add("hidden");
-  document.getElementById("forgotScreen").classList.add("hidden");
+  document.getElementById("authScreen").style.display="flex";
+  document.getElementById("appScreen").style.display="none";
+  document.getElementById("forgotScreen").style.display="none";
 }
 
-// Safety net - if init takes too long, show auth
-setTimeout(()=>{
-  if(document.getElementById("authScreen").classList.contains("hidden")&&
-     document.getElementById("appScreen").classList.contains("hidden")){
-    showAuth();
-  }
-},4000);
-
 function showForgot(){
-  document.getElementById("authScreen").classList.add("hidden");
-  document.getElementById("forgotScreen").classList.remove("hidden");
-  // Pre-fill email if already typed
+  document.getElementById("authScreen").style.display="none";
+  document.getElementById("forgotScreen").style.display="flex";
   const email=document.getElementById("authEmail").value.trim();
   if(email)document.getElementById("resetEmail").value=email;
   document.getElementById("resetMsg").textContent="";
 }
 
 function showLogin(){
-  document.getElementById("forgotScreen").classList.add("hidden");
-  document.getElementById("authScreen").classList.remove("hidden");
+  document.getElementById("forgotScreen").style.display="none";
+  document.getElementById("authScreen").style.display="flex";
 }
+
+// Safety net
+setTimeout(()=>{
+  const auth=document.getElementById("authScreen");
+  const app=document.getElementById("appScreen");
+  if(auth.style.display==="none"&&app.style.display==="none"){
+    showAuth();
+  }
+},4000);
 
 async function sendReset(){
   const email=document.getElementById("resetEmail").value.trim();
