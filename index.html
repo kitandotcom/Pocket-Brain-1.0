@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Pocket Brain"/>
 <link rel="manifest" href="/manifest.json"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236366F1'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
 <title>Pocket Brain</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -312,16 +313,17 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// Load Paystack without blocking
 (function(){const s=document.createElement('script');s.src='https://js.paystack.co/v1/inline.js';s.async=true;document.head.appendChild(s);})();
 </script>
 <script>
 // ══════════════════════════════════════════
-// ⚙️  REPLACE THESE WITH YOUR ACTUAL VALUES
+// ⚙️  CONFIG
 // ══════════════════════════════════════════
 const SUPABASE_URL     = "https://wouruhznwxiawruaojoy.supabase.co";
 const SUPABASE_ANON    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvdXJ1aHpud3hpYXdydWFvam95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNDYzNjIsImV4cCI6MjA5MDgyMjM2Mn0.NkgpPK2C2xlYJnGRkr0Zhonx-CO8CIKf9JOiDgn8OiM";
 const PAYSTACK_PK      = "pk_live_560e2cbc071f3755568cb57e6f7c593de5575940";
-const PLAN_KOBO        = 180000;                     // ₦1,800 in kobo
+const PLAN_KOBO        = 180000;
 
 // ══════════════════════════════════════════
 const { createClient } = supabase;
@@ -343,7 +345,10 @@ async function init(){
     const{data:{session}}=await sb.auth.getSession();
     if(session?.user){currentUser=session.user;await loadData();showApp();}
     else showAuth();
-  }catch{showAuth();}
+  }catch(e){
+    console.error("Init error:",e);
+    showAuth();
+  }
 }
 
 function showApp(){
@@ -364,6 +369,17 @@ function showAuth(){
   document.getElementById("appScreen").classList.add("hidden");
   document.getElementById("forgotScreen").classList.add("hidden");
 }
+
+// Hide loading screen immediately if JS runs — prevents permanent black screen
+document.addEventListener("DOMContentLoaded",()=>{
+  setTimeout(()=>{
+    const ls=document.getElementById("loadingScreen");
+    if(ls&&ls.style.display!=="none"){
+      // If still showing after 5s, force show auth
+      showAuth();
+    }
+  },5000);
+});
 
 function showForgot(){
   document.getElementById("authScreen").classList.add("hidden");
