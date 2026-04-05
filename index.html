@@ -1,369 +1,425 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#080C14"/>
+<meta name="theme-color" content="#2563EB"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Pocket Brain"/>
 <link rel="manifest" href="/manifest.json"/>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236366F1'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
 <title>Pocket Brain</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-:root{--bg:#080C14;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.07);--accent:#6366F1;--accent2:#10B981;--danger:#FF6B35;--text:#E8F0FE;--muted:rgba(232,240,254,0.4);--font-d:'Syne',sans-serif;--font-m:'JetBrains Mono',monospace}
+[data-theme="light"]{--bg:#F0F4FF;--bg2:#FFFFFF;--surface:#FFFFFF;--surface2:#F8FAFF;--border:#E2E8F7;--accent:#2563EB;--accent-light:#EEF2FF;--accent2:#059669;--accent2-light:#ECFDF5;--danger:#DC2626;--danger-light:#FEF2F2;--text:#0F172A;--text2:#475569;--text3:#94A3B8;--shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(37,99,235,0.06);--shadow-lg:0 4px 24px rgba(37,99,235,0.12)}
+[data-theme="dark"]{--bg:#0B1120;--bg2:#111827;--surface:#1E293B;--surface2:#0F172A;--border:#1E3A5F;--accent:#3B82F6;--accent-light:rgba(59,130,246,0.12);--accent2:#10B981;--accent2-light:rgba(16,185,129,0.12);--danger:#EF4444;--danger-light:rgba(239,68,68,0.12);--text:#F1F5F9;--text2:#94A3B8;--text3:#475569;--shadow:0 1px 3px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2);--shadow-lg:0 4px 24px rgba(0,0,0,0.3)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);font-family:var(--font-m);color:var(--text)}
+html,body{height:100%;overflow:hidden;transition:background 0.3s}
+body{background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--text)}
 ::-webkit-scrollbar{display:none}
-.glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 20% 10%,rgba(99,102,241,0.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 90%,rgba(16,185,129,0.1) 0%,transparent 50%)}
-.screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;overflow:hidden}
-.screen.hidden{display:none}
-/* AUTH */
-#authScreen{background:var(--bg);align-items:center;justify-content:center;padding:32px 24px}
-.auth-logo{font-family:var(--font-d);font-size:44px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.auth-tagline{font-size:11px;color:var(--muted);margin-bottom:40px;letter-spacing:3px}
-.auth-card{width:100%;max-width:360px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:24px;padding:24px}
-.auth-tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:12px;padding:3px;margin-bottom:20px}
-.auth-tab{flex:1;padding:8px;font-family:var(--font-m);font-size:11px;font-weight:600;border:none;background:transparent;color:var(--muted);border-radius:10px;cursor:pointer;letter-spacing:1px;transition:all .2s}
-.auth-tab.active{background:var(--accent);color:#fff}
-.field{margin-bottom:14px}
-.field-label{font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
-.field input{width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none;transition:border .2s}
-.field input:focus{border-color:var(--accent)}
-.field input::placeholder{color:rgba(255,255,255,0.2)}
-.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:var(--font-m);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s}
-.btn-accent{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,0.3)}
-.btn-accent:active{transform:scale(0.98)}
-.btn-accent:disabled{opacity:0.4;cursor:not-allowed;transform:none}
-.btn-green{background:linear-gradient(135deg,#10B981,#059669);color:#fff}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
-.auth-msg{font-size:12px;margin-top:10px;text-align:center;min-height:18px}
-/* APP */
-#appScreen{background:var(--bg)}
-.app-scroll{flex:1;overflow-y:auto;padding:0 16px 100px;padding-top:max(env(safe-area-inset-top,24px),24px)}
-.app-header{padding:16px 0 0;margin-bottom:18px}
-.app-header-row{display:flex;justify-content:space-between;align-items:center}
-.app-logo{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:4px;color:var(--accent);text-transform:uppercase;margin-bottom:2px}
-.app-title{font-family:var(--font-d);font-size:22px;font-weight:800}
-.user-btn{width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
-.balance-hero{background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(16,185,129,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:20px;padding:20px;margin-bottom:14px}
-.bh-label{font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:5px}
-.bh-val{font-family:var(--font-d);font-size:34px;font-weight:800;color:var(--accent2)}
-.bh-sub{font-size:11px;color:var(--muted);margin-top:4px}
-.stats-row{display:flex;gap:8px;margin-bottom:14px}
-.stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px}
-.stat-label{font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:3px;text-transform:uppercase}
-.stat-val{font-family:var(--font-d);font-size:15px;font-weight:700}
-.tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:14px;padding:4px;margin-bottom:18px;gap:2px}
-.tab{flex:1;padding:8px 2px;font-family:var(--font-m);font-size:9px;background:transparent;color:var(--muted);border:none;border-radius:10px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:.5px}
-.tab.active{background:var(--accent);color:#fff;font-weight:600}
-.tab-icon{font-size:14px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px}
-.card-label{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
-/* BANKS */
-.bank-card{border-radius:18px;padding:18px;margin-bottom:12px}
-.bank-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.bank-logo-row{display:flex;align-items:center;gap:10px}
-.bank-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.bank-name{font-family:var(--font-d);font-weight:700;font-size:14px}
-.bank-acc{font-size:11px;color:var(--muted)}
-.linked-badge{font-size:9px;padding:4px 10px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--accent2);letter-spacing:1px;font-weight:600}
-.bank-nums{display:flex;justify-content:space-between;margin-bottom:10px}
-.num-label{font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:2px}
-.num-val{font-family:var(--font-d);font-size:19px;font-weight:700}
-.bar-track{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
-.bar-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
-.bar-note{font-size:10px;color:var(--muted);margin-top:5px}
-.add-bank-btn{width:100%;padding:14px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:16px;color:var(--accent);font-family:var(--font-m);font-size:12px;cursor:pointer;letter-spacing:1px;transition:all .2s}
-/* IMPORT */
-.sample-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.chip{padding:5px 11px;font-size:10px;border-radius:8px;font-family:var(--font-m);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:var(--accent);cursor:pointer}
-textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-family:var(--font-m);font-size:12px;outline:none;resize:none;line-height:1.6}
-textarea:focus{border-color:var(--accent)}
-textarea::placeholder{color:rgba(255,255,255,0.2)}
-.parsed-card{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:16px;padding:18px;margin-bottom:12px}
-.parsed-ok{font-size:10px;letter-spacing:3px;color:var(--accent2);margin-bottom:12px}
-.parsed-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px}
-.parsed-key{color:var(--muted)}
-.parsed-val{font-weight:600}
-.cat-pills{display:flex;flex-wrap:wrap;gap:5px}
-.cat-pill{padding:5px 10px;border-radius:8px;font-size:11px;font-family:var(--font-m);cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s}
-/* TX */
-.tx{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px}
-.tx-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.tx-info{flex:1;min-width:0}
-.tx-name{font-family:var(--font-d);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tx-meta{display:flex;gap:6px;margin-top:3px;align-items:center}
-.tx-date{font-size:10px;color:var(--muted)}
-.tx-bank-tag{font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,0.05);color:var(--muted)}
-.tx-right{text-align:right;flex-shrink:0}
-.tx-amt{font-family:var(--font-d);font-weight:700;font-size:14px}
-.tx-edit{background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:10px;margin-top:2px;font-family:var(--font-m)}
-.cat-editor{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
-.cat-editor-label{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px}
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
-/* AI */
-.ai-box{background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:18px;margin-bottom:12px}
-.ai-label{font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:4px}
-.ai-sub{font-size:11px;color:var(--muted);margin-bottom:14px}
-.ai-text{font-size:13px;line-height:1.9}
-.ai-placeholder{text-align:center;color:var(--muted);padding:16px 0;font-size:13px}
-.breakdown-row{margin-bottom:14px}
-.br-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px}
-/* PAYWALL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:50;display:flex;align-items:flex-end;justify-content:center}
-.overlay.hidden{display:none}
-.sheet{background:#0F1623;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;border:1px solid rgba(99,102,241,0.2);animation:slideUp .35s cubic-bezier(.22,1,.36,1);max-height:90vh;overflow-y:auto}
-.sheet-title{font-family:var(--font-d);font-size:24px;font-weight:800;margin-bottom:8px}
-.paywall-feature{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px}
-.pro-badge{display:inline-block;font-size:8px;padding:2px 6px;border-radius:6px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-weight:700;letter-spacing:1px;margin-left:5px;vertical-align:middle}
-/* TOAST */
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:12px;font-size:11px;font-weight:600;z-index:200;letter-spacing:1px;white-space:nowrap;animation:toastIn .3s ease}
-.toast-success{background:var(--accent2);color:#fff}
-.toast-error{background:var(--danger);color:#fff}
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(60px + env(safe-area-inset-bottom,0px));background:rgba(8,12,20,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:all .2s;padding:8px}
-.nav-icon{font-size:19px}
-.nav-label{font-size:9px;color:var(--muted);letter-spacing:.5px;font-family:var(--font-m)}
-.nav-item.active .nav-label{color:var(--accent)}
-.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px rgba(99,102,241,0.6))}
-/* LOADING */
-.loading-screen{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.loading-logo{font-family:var(--font-d);font-size:52px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:pulse 1.5s infinite}
-.error-box{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:12px;padding:14px;font-size:13px;margin-top:8px;color:#FF8B60}
-/* BANK MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:60;display:flex;align-items:flex-end;justify-content:center}
-.modal-overlay.hidden{display:none}
-.bank-option{width:100%;padding:13px 16px;margin-bottom:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;font-family:var(--font-m);cursor:pointer;text-align:left;transition:background .15s}
-/* ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
-@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+.screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 .hidden{display:none!important}
+/* AUTH */
+#authScreen,#forgotScreen{align-items:center;justify-content:center;padding:24px}
+.auth-icon{width:68px;height:68px;background:var(--accent);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px;box-shadow:0 8px 24px rgba(37,99,235,0.3)}
+.auth-title{font-size:26px;font-weight:800;color:var(--text);text-align:center;margin-bottom:4px}
+.auth-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:32px}
+.auth-card{width:100%;max-width:380px;background:var(--surface);border-radius:24px;padding:28px;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;margin-bottom:22px}
+.seg-btn{flex:1;padding:9px;font-family:inherit;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text2);border-radius:10px;cursor:pointer;transition:all .2s}
+.seg-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,0.3)}
+.field{margin-bottom:16px}
+.field-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.field input,.field select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border .2s}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--text3)}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:0.3px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,0.3)}
+.btn-primary:active{transform:scale(0.98)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-success{background:var(--accent2);color:#fff}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text2)}
+.auth-msg{font-size:13px;margin-top:12px;text-align:center;min-height:18px}
+.link-text{font-size:13px;color:var(--accent);cursor:pointer;font-weight:500}
+/* TOPBAR */
+.app-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;padding-top:max(env(safe-area-inset-top,14px),14px)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:32px;height:32px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.brand-name{font-size:17px;font-weight:800;color:var(--text)}
+.topbar-right{display:flex;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:10px;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s}
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--accent) 0%,#1D4ED8 100%);padding:24px 20px;margin:16px;border-radius:20px;color:#fff;box-shadow:0 8px 24px rgba(37,99,235,0.3)}
+.hero-label{font-size:11px;font-weight:700;opacity:0.8;letter-spacing:1px;margin-bottom:6px}
+.hero-amount{font-size:38px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.hero-sub{font-size:13px;opacity:0.75}
+.hero-stats{display:flex;gap:10px;margin-top:18px}
+.hero-stat{flex:1;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px;backdrop-filter:blur(10px)}
+.hero-stat-lbl{font-size:10px;font-weight:700;opacity:0.8;letter-spacing:0.5px;margin-bottom:3px}
+.hero-stat-val{font-size:18px;font-weight:800}
+/* SECTIONS */
+.sec-pad{padding:0 20px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px}
+.sec-title{font-size:16px;font-weight:700;color:var(--text)}
+.sec-action{font-size:13px;color:var(--accent);font-weight:600;cursor:pointer}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+/* QUICK ACTIONS */
+.qa-btn{flex:1;padding:16px 8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;box-shadow:var(--shadow);transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.qa-icon{font-size:24px}
+.qa-label{font-size:12px;font-weight:700;color:var(--text)}
+.qa-sub{font-size:11px;color:var(--text2)}
+/* BANK CARDS */
+.bank-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:var(--shadow)}
+.bank-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.bank-left{display:flex;align-items:center;gap:12px}
+.bank-logo{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.bank-name{font-size:15px;font-weight:700;color:var(--text)}
+.bank-acc{font-size:12px;color:var(--text2);margin-top:2px}
+.linked-pill{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--accent2-light);color:var(--accent2)}
+.unlink-btn{font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;background:var(--danger-light);color:var(--danger);border:none;cursor:pointer;font-family:inherit}
+.bank-nums{display:flex;justify-content:space-between;margin-bottom:10px}
+.amt-label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:3px}
+.amt-val{font-size:20px;font-weight:800;color:var(--text)}
+.prog-track{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.prog-note{font-size:11px;color:var(--text3);margin-top:5px}
+.add-bank-btn{width:100%;padding:16px;background:var(--accent-light);border:1.5px dashed var(--accent);border-radius:16px;color:var(--accent);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:12px;transition:all .2s}
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;box-shadow:0 -4px 20px rgba(0,0,0,0.06)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;cursor:pointer;gap:3px;border:none;background:transparent;font-family:inherit}
+.nav-icon{font-size:20px}
+.nav-lbl{font-size:10px;font-weight:600;color:var(--text3)}
+.nav-btn.active .nav-lbl{color:var(--accent)}
+/* PANES */
+.pane{display:none;padding-bottom:32px}
+.pane.active{display:block}
+/* IMPORT */
+.import-area{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;line-height:1.6;min-height:100px}
+.import-area:focus{border-color:var(--accent)}
+.import-area::placeholder{color:var(--text3)}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:6px 12px;font-size:11px;font-weight:600;border-radius:8px;background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);cursor:pointer;font-family:inherit}
+.parsed{background:var(--accent2-light);border:1.5px solid var(--accent2);border-radius:16px;padding:20px;margin-bottom:12px}
+.parsed-ok{font-size:11px;font-weight:700;color:var(--accent2);letter-spacing:1px;margin-bottom:12px}
+.p-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:14px}
+.p-key{color:var(--text2);font-weight:500}
+.p-val{font-weight:700}
+.cat-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cat-chip{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);transition:all .15s}
+.err-card{background:var(--danger-light);border:1px solid var(--danger);border-radius:12px;padding:14px;font-size:13px;color:var(--danger);margin-top:8px}
+/* TRANSACTIONS */
+.tx{display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:14px;padding:16px;margin-bottom:8px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.tx-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.tx-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{display:flex;gap:8px;align-items:center;margin-top:3px}
+.tx-date{font-size:11px;color:var(--text3);font-weight:500}
+.tx-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--bg);color:var(--text2);border:1px solid var(--border)}
+.tx-amt{font-size:15px;font-weight:800}
+.tx-edit{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;font-family:inherit;font-weight:500;margin-top:3px;display:block}
+.cat-edit-row{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border)}
+.cat-edit-lbl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.5px;margin-bottom:10px}
+/* INSIGHT */
+.personality-card{background:linear-gradient(135deg,var(--accent),#7C3AED);border-radius:16px;padding:20px;color:#fff;text-align:center;margin-bottom:12px;box-shadow:0 8px 24px rgba(37,99,235,0.25)}
+.p-name{font-size:22px;font-weight:800;margin-bottom:6px}
+.p-msg{font-size:13px;opacity:0.85;line-height:1.5}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.pro-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#7C3AED);color:#fff;letter-spacing:0.5px;vertical-align:middle;margin-left:4px}
+.bdown-row{margin-bottom:14px}
+.bdown-head{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;font-weight:600}
+.forecast-grid{display:flex;gap:10px;margin-bottom:12px}
+.f-block{flex:1;background:var(--bg);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.f-lbl{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:0.5px;margin-bottom:4px}
+.f-val{font-size:18px;font-weight:800;color:var(--text)}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.li-name{font-size:13px;font-weight:600;color:var(--text)}
+.li-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.goal-box{background:var(--bg);border-radius:12px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
+.goal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.goal-name{font-size:14px;font-weight:700;color:var(--text)}
+.budget-row{margin-bottom:14px}
+.bud-head{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;font-weight:600}
+.ai-box{background:var(--accent-light);border:1.5px solid var(--accent);border-radius:16px;padding:20px;margin-bottom:12px}
+.ai-lbl{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:4px}
+.ai-sub{font-size:12px;color:var(--text2);margin-bottom:12px}
+.ai-text{font-size:14px;line-height:1.8;color:var(--text)}
+.ai-ph{font-size:13px;color:var(--text3);text-align:center;padding:16px 0}
+.broke-row{display:flex;gap:8px;align-items:flex-end}
+.broke-in{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.broke-in:focus{border-color:var(--accent)}
+.sm-btn{padding:12px 16px;background:var(--accent);border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.dash-btn{width:100%;padding:14px;background:var(--accent-light);border:1.5px dashed var(--accent);border-radius:12px;color:var(--accent);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px}
+.weekly-meta{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:10px;padding:8px 12px;background:var(--bg);border-radius:8px}
+.weekly-text{font-size:13px;line-height:1.9;color:var(--text)}
+.empty{text-align:center;padding:32px 16px}
+.empty-ico{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.empty-desc{font-size:13px;color:var(--text2);line-height:1.5}
+/* OVERLAYS */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.hidden{display:none!important}
+.sheet{background:var(--surface);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;border-top:1px solid var(--border);animation:slideUp .3s cubic-bezier(.22,1,.36,1);max-height:90vh;overflow-y:auto}
+.sh-tag{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:8px}
+.sh-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px}
+.sh-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:60;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.hidden{display:none!important}
+.bank-opt{width:100%;padding:14px 16px;margin-bottom:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;text-align:left;transition:all .15s}
+.bank-opt:hover{border-color:var(--accent);background:var(--accent-light)}
+/* PAYWALL */
+.pw-amt{font-size:44px;font-weight:800;color:var(--accent);text-align:center;margin:16px 0 4px}
+.pw-per{font-size:13px;color:var(--text2);text-align:center;margin-bottom:22px}
+.pw-feat{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.pw-check{color:var(--accent2);font-size:18px}
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:13px;font-weight:700;z-index:200;white-space:nowrap;animation:toastIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+.ts{background:var(--accent2);color:#fff}
+.te{background:var(--danger);color:#fff}
+.ti{background:var(--accent);color:#fff}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
-<div class="screen" id="authScreen" style="display:flex">
-  <div class="glow"></div>
-  <div class="auth-logo">Pocket Brain</div>
-  <div class="auth-tagline">YOUR MONEY. CLEAR.</div>
-  <div class="auth-card">
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="setAuthTab('login')" id="authTabLogin">LOGIN</button>
-      <button class="auth-tab" onclick="setAuthTab('signup')" id="authTabSignup">SIGN UP</button>
+<!-- FORGOT -->
+<div class="screen hidden" id="forgotScreen" style="display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div class="auth-icon">🧠</div>
+      <div class="auth-title">Reset Password</div>
+      <div class="auth-sub">We'll send a reset link to your email</div>
     </div>
-    <div class="field"><div class="field-label">Email</div><input type="email" id="authEmail" placeholder="you@email.com"/></div>
-    <div class="field"><div class="field-label">Password</div><input type="password" id="authPassword" placeholder="••••••••"/></div>
-    <div class="field hidden" id="authNameField"><div class="field-label">Full Name</div><input type="text" id="authName" placeholder="Your name"/></div>
-    <button class="btn btn-accent" id="authBtn" onclick="handleAuth()">LOGIN</button>
-    <div id="forgotLink" style="text-align:center;margin-top:12px">
-      <span onclick="showForgot()" style="font-size:11px;color:var(--accent);cursor:pointer;letter-spacing:1px">Forgot password?</span>
+    <div class="auth-card">
+      <div class="field"><div class="field-label">Email Address</div><input type="email" id="resetEmail" placeholder="you@email.com"/></div>
+      <button class="btn btn-primary" id="resetBtn" onclick="sendReset()">Send Reset Link</button>
+      <div class="auth-msg" id="resetMsg"></div>
+      <div style="text-align:center;margin-top:14px"><span class="link-text" onclick="showLogin()">← Back to login</span></div>
     </div>
-    <div class="auth-msg" id="authMsg"></div>
   </div>
 </div>
 
-<!-- FORGOT PASSWORD SCREEN -->
-<div class="screen" id="forgotScreen" style="display:none">
-  <div class="glow"></div>
-  <div class="auth-logo">Pocket Brain</div>
-  <div class="auth-tagline">RESET YOUR PASSWORD</div>
-  <div class="auth-card">
-    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">Enter your email and we'll send you a link to reset your password.</div>
-    <div class="field"><div class="field-label">Email</div><input type="email" id="resetEmail" placeholder="you@email.com"/></div>
-    <button class="btn btn-accent" id="resetBtn" onclick="sendReset()">SEND RESET LINK</button>
-    <div class="auth-msg" id="resetMsg"></div>
-    <div style="text-align:center;margin-top:14px">
-      <span onclick="showLogin()" style="font-size:11px;color:var(--accent);cursor:pointer;letter-spacing:1px">← Back to login</span>
+<!-- AUTH -->
+<div class="screen" id="authScreen" style="display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div class="auth-icon">🧠</div>
+      <div class="auth-title">Pocket Brain</div>
+      <div class="auth-sub">Your money. Clear.</div>
+    </div>
+    <div class="auth-card">
+      <div class="seg">
+        <button class="seg-btn active" onclick="setAuthTab('login')" id="authTabLogin">Login</button>
+        <button class="seg-btn" onclick="setAuthTab('signup')" id="authTabSignup">Sign Up</button>
+      </div>
+      <div class="field"><div class="field-label">Email</div><input type="email" id="authEmail" placeholder="you@email.com"/></div>
+      <div class="field"><div class="field-label">Password</div><input type="password" id="authPassword" placeholder="Min. 6 characters"/></div>
+      <div class="field hidden" id="authNameField"><div class="field-label">Full Name</div><input type="text" id="authName" placeholder="Your name"/></div>
+      <button class="btn btn-primary" id="authBtn" onclick="handleAuth()">LOGIN</button>
+      <div id="forgotWrap" style="text-align:center;margin-top:14px"><span class="link-text" onclick="showForgot()">Forgot password?</span></div>
+      <div class="auth-msg" id="authMsg"></div>
     </div>
   </div>
 </div>
 
 <!-- APP -->
-<div class="screen" id="appScreen" style="display:none">
-  <div class="glow"></div>
-  <div class="app-scroll" id="appScroll">
-    <div class="app-header">
-      <div class="app-header-row">
-        <div><div class="app-logo">POCKET BRAIN</div><div class="app-title" id="greetingText">Good day 👋</div></div>
-        <div class="user-btn" onclick="showProfile()">👤</div>
-      </div>
+<div class="screen hidden" id="appScreen" style="display:none">
+  <div class="app-topbar">
+    <div class="brand">
+      <div class="brand-icon">🧠</div>
+      <div class="brand-name">Pocket Brain</div>
     </div>
-    <div class="balance-hero">
-      <div class="bh-label">NET BALANCE</div>
-      <div class="bh-val" id="heroBalance">₦0</div>
-      <div class="bh-sub" id="heroSub">0 transactions tracked</div>
-    </div>
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">SPENT</div><div class="stat-val" style="color:var(--danger)" id="statSpent">₦0</div></div>
-      <div class="stat-card"><div class="stat-label">ENTRIES</div><div class="stat-val" style="color:var(--accent)" id="statCount">0</div></div>
-      <div class="stat-card"><div class="stat-label">TOP CAT</div><div class="stat-val" id="statTop" style="font-size:12px">—</div></div>
-    </div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('accounts')" id="tab-accounts"><span class="tab-icon">🏦</span><span>ACCOUNTS</span></button>
-      <button class="tab" onclick="switchTab('import')" id="tab-import"><span class="tab-icon">📩</span><span>IMPORT</span></button>
-      <button class="tab" onclick="switchTab('transactions')" id="tab-transactions"><span class="tab-icon">📋</span><span>HISTORY</span></button>
-      <button class="tab" onclick="switchTab('insight')" id="tab-insight"><span class="tab-icon">🤖</span><span>AI<span class="pro-badge">PRO</span></span></button>
-    </div>
-    <!-- ACCOUNTS -->
-    <div id="pane-accounts"><div id="bankCards"></div><button class="add-bank-btn" onclick="openBankModal()">+ LINK ANOTHER BANK</button></div>
-    <!-- IMPORT -->
-    <div id="pane-import" class="hidden">
-      <div class="card">
-        <div class="card-label">Paste Bank Alert</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Copy a debit SMS or email from your bank and paste below. AI extracts the details automatically.</div>
-        <textarea id="alertInput" rows="5" placeholder="e.g. Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC..."></textarea>
-        <div style="font-size:10px;color:var(--muted);margin:10px 0 8px;letter-spacing:1px">TRY A SAMPLE:</div>
-        <div class="sample-chips">
-          <button class="chip" onclick="setSample(0)">🍔 Food</button>
-          <button class="chip" onclick="setSample(1)">🚗 Transport</button>
-          <button class="chip" onclick="setSample(2)">↔️ Transfer</button>
-          <button class="chip" onclick="setSample(3)">🎬 Entertainment</button>
-          <button class="chip" onclick="setSample(4)">⛽ Fuel</button>
-        </div>
-        <button class="btn btn-accent" id="parseBtn" onclick="parseAlert()" style="margin-top:4px">🤖 PARSE ALERT</button>
-      </div>
-      <div id="parsedCard" class="hidden parsed-card">
-        <div class="parsed-ok">✓ PARSED SUCCESSFULLY</div>
-        <div class="parsed-row"><span class="parsed-key">Merchant</span><span class="parsed-val" id="pName">—</span></div>
-        <div class="parsed-row"><span class="parsed-key">Amount</span><span class="parsed-val" id="pAmt">—</span></div>
-        <div class="parsed-row"><span class="parsed-key">Date</span><span class="parsed-val" id="pDate">—</span></div>
-        <div class="parsed-row"><span class="parsed-key">Bank</span><span class="parsed-val" id="pBank">—</span></div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin:12px 0 8px">CATEGORY</div>
-        <div class="cat-pills" id="parsedCats"></div>
-        <div style="margin-top:16px"><button class="btn btn-green" onclick="confirmParsed()">ADD TO HISTORY ✓</button></div>
-      </div>
-      <div id="parseError" class="hidden error-box">⚠️ Couldn't parse that alert. Try pasting the full raw SMS text.</div>
-    </div>
-    <!-- TRANSACTIONS -->
-    <div id="pane-transactions" class="hidden"><div id="txList"></div></div>
-    <!-- INSIGHT -->
-    <div id="pane-insight" class="hidden">
-
-      <!-- Spending Personality Card -->
-      <div class="card" id="personalityCard">
-        <div class="card-label">YOUR SPENDING PERSONALITY</div>
-        <div id="personalityContent"><div class="ai-placeholder" style="padding:12px 0">Tap analyze to reveal your personality</div></div>
-      </div>
-
-      <!-- Broke Alert -->
-      <div class="card">
-        <div class="card-label">💸 BROKE ALERT</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Get notified inside the app when balance drops below your threshold</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="flex:1">
-            <div class="field-label" style="font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px">ALERT WHEN BALANCE BELOW</div>
-            <input type="number" id="brokeThreshold" placeholder="e.g. 5000" value="${localStorage.getItem('pb_broke_threshold')||''}"
-              style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font-m);font-size:13px;outline:none"/>
-          </div>
-          <button onclick="saveBrokeAlert()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-family:var(--font-m);font-size:11px;cursor:pointer;font-weight:600;margin-top:18px">SAVE</button>
-        </div>
-        <div id="brokeAlertMsg" style="font-size:11px;margin-top:8px;color:var(--accent2)"></div>
-      </div>
-
-      <!-- Bill Detector -->
-      <div class="card">
-        <div class="card-label">🔁 RECURRING BILLS DETECTED</div>
-        <div id="billDetector"><div style="font-size:12px;color:var(--muted)">Add transactions to detect recurring bills</div></div>
-      </div>
-
-      <!-- Category Budgets -->
-      <div class="card">
-        <div class="card-label">🎯 CATEGORY BUDGETS <span class="pro-badge">PRO</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Set monthly spending limits per category</div>
-        <div id="budgetsList"></div>
-        <button onclick="handleBudgetClick()" style="width:100%;padding:11px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:12px;color:var(--accent);font-family:var(--font-m);font-size:11px;cursor:pointer;letter-spacing:1px;margin-top:8px">+ SET BUDGET</button>
-      </div>
-
-      <!-- Savings Goals -->
-      <div class="card">
-        <div class="card-label">🎯 SAVINGS GOALS <span class="pro-badge">PRO</span></div>
-        <div id="goalsList"><div style="font-size:12px;color:var(--muted)">No goals set yet</div></div>
-        <button onclick="handleGoalClick()" style="width:100%;padding:11px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:12px;color:var(--accent);font-family:var(--font-m);font-size:11px;cursor:pointer;letter-spacing:1px;margin-top:8px">+ ADD GOAL</button>
-      </div>
-
-      <!-- Spending Forecast -->
-      <div class="card">
-        <div class="card-label">📈 SPENDING FORECAST <span class="pro-badge">PRO</span></div>
-        <div id="forecastContent"><div style="font-size:12px;color:var(--muted)">Add more transactions to see forecast</div></div>
-      </div>
-
-      <!-- Weekly Summary -->
-      <div class="card">
-        <div class="card-label">📋 WEEKLY SUMMARY <span class="pro-badge">PRO</span></div>
-        <div id="weeklySummaryContent"><div class="ai-placeholder" style="padding:8px 0">Tap to generate this week's summary</div></div>
-        <button onclick="handleWeeklySummaryClick()" class="btn btn-accent" id="weeklyBtn" style="margin-top:12px">📋 GENERATE WEEKLY SUMMARY</button>
-      </div>
-
-      <!-- Merchant Intelligence -->
-      <div class="card">
-        <div class="card-label">🏪 MERCHANT INTEL <span class="pro-badge">PRO</span></div>
-        <div id="merchantIntel"><div style="font-size:12px;color:var(--muted)">Add transactions to see merchant insights</div></div>
-      </div>
-
-      <!-- Breakdown -->
-      <div class="card"><div class="card-label">Spending Breakdown</div><div id="breakdown"></div></div>
-
-      <!-- AI Advisor -->
-      <div class="ai-box">
-        <div class="ai-label">AI FINANCE ADVISOR <span class="pro-badge">PRO</span></div>
-        <div class="ai-sub">Personalized advice from your actual transactions</div>
-        <div id="aiContent"><div class="ai-placeholder">Tap below to get your analysis</div></div>
-      </div>
-      <button class="btn btn-accent" id="insightBtn" onclick="handleInsightClick()">🤖 ANALYZE MY SPENDING</button>
+    <div class="topbar-right">
+      <div class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</div>
+      <div class="icon-btn" onclick="showProfile()">👤</div>
     </div>
   </div>
-  <div class="bottom-nav">
-    <div class="nav-item active" onclick="switchTab('accounts')" id="nav-accounts"><span class="nav-icon">🏦</span><span class="nav-label">ACCOUNTS</span></div>
-    <div class="nav-item" onclick="switchTab('import')" id="nav-import"><span class="nav-icon">📩</span><span class="nav-label">IMPORT</span></div>
-    <div class="nav-item" onclick="switchTab('transactions')" id="nav-transactions"><span class="nav-icon">📋</span><span class="nav-label">HISTORY</span></div>
-    <div class="nav-item" onclick="switchTab('insight')" id="nav-insight"><span class="nav-icon">🤖</span><span class="nav-label">AI</span></div>
+
+  <div style="flex:1;overflow-y:auto;padding-bottom:80px" id="appScroll">
+
+    <!-- DASHBOARD -->
+    <div class="pane active" id="pane-dashboard">
+      <div class="hero">
+        <div class="hero-label">NET BALANCE</div>
+        <div class="hero-amount" id="heroBalance">₦0</div>
+        <div class="hero-sub" id="heroSub">No transactions yet</div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="hero-stat-lbl">SPENT</div><div class="hero-stat-val" id="heroSpent">₦0</div></div>
+          <div class="hero-stat"><div class="hero-stat-lbl">ENTRIES</div><div class="hero-stat-val" id="heroCount">0</div></div>
+          <div class="hero-stat"><div class="hero-stat-lbl">TOP</div><div class="hero-stat-val" id="heroTop">—</div></div>
+        </div>
+      </div>
+      <div class="sec-pad">
+        <div class="sec-head"><div class="sec-title">Quick Actions</div></div>
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <button class="qa-btn" onclick="switchTab('import')"><span class="qa-icon">📩</span><span class="qa-label">Import</span><span class="qa-sub">Paste SMS</span></button>
+          <button class="qa-btn" onclick="switchTab('accounts')"><span class="qa-icon">🏦</span><span class="qa-label">Accounts</span><span class="qa-sub">Link bank</span></button>
+          <button class="qa-btn" onclick="switchTab('insight')"><span class="qa-icon">🤖</span><span class="qa-label">AI Insights</span><span class="qa-sub">Pro</span></button>
+        </div>
+        <div class="sec-head"><div class="sec-title">Recent Transactions</div><div class="sec-action" onclick="switchTab('history')">See all →</div></div>
+        <div id="recentTx"></div>
+        <div id="dashPersonality"></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS -->
+    <div class="pane" id="pane-accounts">
+      <div class="sec-pad" style="padding-top:20px">
+        <div class="sec-head"><div class="sec-title">Linked Accounts</div></div>
+        <div id="bankCards"></div>
+        <button class="add-bank-btn" onclick="openBankModal()">+ Link Bank Account</button>
+        <div style="background:var(--accent-light);border-radius:12px;padding:14px;border:1px solid var(--accent)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">💡 How it works</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Add your bank manually, then paste debit SMS alerts in the Import tab — AI reads and categorizes them instantly.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="pane" id="pane-import">
+      <div class="sec-pad" style="padding-top:20px">
+        <div class="sec-head"><div class="sec-title">Import Bank Alert</div></div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Paste any debit SMS or email from your bank. AI reads and categorizes it instantly.</div>
+          <textarea class="import-area" id="alertInput" rows="5" placeholder="e.g. Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC..."></textarea>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);margin:12px 0 8px">TRY A SAMPLE:</div>
+          <div class="chip-row">
+            <button class="chip" onclick="setSample(0)">🍔 Food</button>
+            <button class="chip" onclick="setSample(1)">🚗 Transport</button>
+            <button class="chip" onclick="setSample(2)">↔️ Transfer</button>
+            <button class="chip" onclick="setSample(3)">🎬 Entertainment</button>
+            <button class="chip" onclick="setSample(4)">⛽ Fuel</button>
+          </div>
+          <button class="btn btn-primary" id="parseBtn" onclick="parseAlert()">🤖 Parse Alert</button>
+        </div>
+        <div id="parsedCard" class="hidden parsed">
+          <div class="parsed-ok">✓ PARSED SUCCESSFULLY</div>
+          <div class="p-row"><span class="p-key">Merchant</span><span class="p-val" id="pName">—</span></div>
+          <div class="p-row"><span class="p-key">Amount</span><span class="p-val" id="pAmt">—</span></div>
+          <div class="p-row"><span class="p-key">Date</span><span class="p-val" id="pDate">—</span></div>
+          <div class="p-row"><span class="p-key">Bank</span><span class="p-val" id="pBank">—</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.5px;margin:14px 0 8px">CATEGORY</div>
+          <div class="cat-grid" id="parsedCats"></div>
+          <div style="margin-top:16px"><button class="btn btn-success" onclick="confirmParsed()">Add to History ✓</button></div>
+        </div>
+        <div id="parseError" class="hidden err-card">⚠️ Couldn't parse that alert. Try pasting the full raw SMS text.</div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="pane" id="pane-history">
+      <div class="sec-pad" style="padding-top:20px">
+        <div class="sec-head"><div class="sec-title">Transaction History</div><div id="histCount" style="font-size:13px;color:var(--text2);font-weight:600"></div></div>
+        <div id="txList"></div>
+      </div>
+    </div>
+
+    <!-- INSIGHT -->
+    <div class="pane" id="pane-insight">
+      <div class="sec-pad" style="padding-top:20px">
+
+        <div class="sec-head"><div class="sec-title">🧠 Spending Personality</div></div>
+        <div id="personalityCard" style="margin-bottom:4px"></div>
+
+        <div class="sec-head"><div class="sec-title">📊 Breakdown</div></div>
+        <div class="feat-card"><div id="breakdown"><div style="font-size:13px;color:var(--text2)">No transactions yet</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">📈 Spending Forecast<span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card"><div id="forecastContent"><div style="font-size:13px;color:var(--text2)">Add transactions to see forecast</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">🔁 Recurring Bills</div></div>
+        <div class="feat-card"><div id="billDetector"><div style="font-size:13px;color:var(--text2)">Add more transactions to detect bills</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">🏪 Top Merchants<span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card"><div id="merchantIntel"><div style="font-size:13px;color:var(--text2)">Add transactions to see merchant insights</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">💸 Broke Alert</div></div>
+        <div class="feat-card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Get alerted when your balance drops below a threshold.</div>
+          <div class="broke-row">
+            <input type="number" id="brokeThreshold" class="broke-in" placeholder="Alert below e.g. ₦5,000"/>
+            <button class="sm-btn" onclick="saveBrokeAlert()">SAVE</button>
+          </div>
+          <div id="brokeAlertMsg" style="font-size:12px;color:var(--accent2);margin-top:8px;font-weight:600"></div>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">🎯 Category Budgets<span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card">
+          <div id="budgetsList"><div style="font-size:13px;color:var(--text2)">No budgets set yet</div></div>
+          <button class="dash-btn" onclick="handleBudgetClick()">+ Set Budget Limit</button>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">💰 Savings Goals<span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card">
+          <div id="goalsList"><div style="font-size:13px;color:var(--text2)">No goals set yet</div></div>
+          <button class="dash-btn" onclick="handleGoalClick()">+ Add Savings Goal</button>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">📋 Weekly Summary<span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card">
+          <div id="weeklySummaryContent"><div style="font-size:13px;color:var(--text2)">Tap below to generate this week's AI summary</div></div>
+          <button class="btn btn-primary" id="weeklyBtn" onclick="handleWeeklySummaryClick()" style="margin-top:14px">📋 Generate Weekly Summary</button>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">🤖 AI Finance Advisor<span class="pro-tag">PRO</span></div></div>
+        <div class="ai-box">
+          <div class="ai-lbl">PERSONALIZED ADVICE</div>
+          <div class="ai-sub">Based on your actual transactions</div>
+          <div id="aiContent"><div class="ai-ph">Tap below to get your analysis</div></div>
+        </div>
+        <button class="btn btn-primary" id="insightBtn" onclick="handleInsightClick()" style="margin-bottom:32px">🤖 Analyze My Spending</button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <button class="nav-btn active" onclick="switchTab('dashboard')" id="nav-dashboard"><span class="nav-icon">🏠</span><span class="nav-lbl">HOME</span></button>
+    <button class="nav-btn" onclick="switchTab('accounts')" id="nav-accounts"><span class="nav-icon">🏦</span><span class="nav-lbl">ACCOUNTS</span></button>
+    <button class="nav-btn" onclick="switchTab('import')" id="nav-import"><span class="nav-icon">📩</span><span class="nav-lbl">IMPORT</span></button>
+    <button class="nav-btn" onclick="switchTab('history')" id="nav-history"><span class="nav-icon">📋</span><span class="nav-lbl">HISTORY</span></button>
+    <button class="nav-btn" onclick="switchTab('insight')" id="nav-insight"><span class="nav-icon">🤖</span><span class="nav-lbl">AI</span></button>
   </div>
 </div>
 
 <!-- PAYWALL -->
 <div class="overlay hidden" id="paywallOverlay">
-  <div class="sheet">
-    <div style="font-size:36px;margin-bottom:12px">🧠</div>
-    <div class="sheet-title">Upgrade to Pro</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">Unlock AI-powered spending analysis and get personalized financial advice.</div>
-    <div style="margin-bottom:22px">
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>AI spending analysis & advice</span></div>
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>Smart bank alert parsing (unlimited)</span></div>
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>Full transaction history</span></div>
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>Monthly spending reports</span></div>
-    </div>
-    <div style="text-align:center;margin-bottom:22px">
-      <div style="font-family:var(--font-d);font-size:40px;font-weight:800;color:var(--accent)">₦1,800</div>
-      <div style="font-size:11px;color:var(--muted)">per month</div>
-    </div>
-    <button class="btn btn-accent" onclick="initPaystack()">PAY WITH PAYSTACK</button>
-    <button onclick="hidePaywall()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:10px">Maybe later</button>
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div style="text-align:center;font-size:40px;margin-bottom:12px">🧠</div>
+    <div class="sh-title" style="text-align:center">Upgrade to Pro</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px">Unlock AI insights and all premium features</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> AI spending analysis & advice</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Weekly AI summaries</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Spending forecast</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Category budgets</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Savings goals tracker</div>
+    <div class="pw-feat" style="border:none"><span class="pw-check">✓</span> Merchant intelligence</div>
+    <div class="pw-amt">₦1,800</div>
+    <div class="pw-per">per month · cancel anytime</div>
+    <button class="btn btn-primary" onclick="initPaystack()">Pay with Paystack</button>
+    <button onclick="hidePaywall()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px">Maybe later</button>
   </div>
 </div>
 
 <!-- PROFILE -->
 <div class="overlay hidden" id="profileOverlay" onclick="hideProfile()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:14px">YOUR ACCOUNT</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:3px" id="profileName">—</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="profileEmail">—</div>
-    <div id="profilePlanBadge" style="margin-bottom:22px"></div>
-    <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-      <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px">THIS MONTH</div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Total spent</span><span style="font-weight:700;color:var(--danger)" id="profileSpent">₦0</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:8px"><span style="color:var(--muted)">Transactions</span><span style="font-weight:700" id="profileCount">0</span></div>
+    <div class="sh-tag">YOUR ACCOUNT</div>
+    <div class="sh-title" id="profileName">—</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:8px" id="profileEmail">—</div>
+    <div id="profilePlanBadge" style="margin-bottom:20px"></div>
+    <div style="background:var(--bg);border-radius:12px;padding:16px;margin-bottom:20px;border:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.5px;margin-bottom:12px">THIS MONTH</div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px"><span style="color:var(--text2)">Total spent</span><span style="font-weight:700;color:var(--danger)" id="profileSpent">₦0</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--text2)">Transactions</span><span style="font-weight:700" id="profileCount">0</span></div>
     </div>
-    <button class="btn btn-outline" onclick="signOut()">SIGN OUT</button>
+    <button class="btn btn-ghost" onclick="signOut()">Sign Out</button>
   </div>
 </div>
 
@@ -375,238 +431,143 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 <!-- BUDGET MODAL -->
 <div class="modal-overlay hidden" id="budgetModal" onclick="closeBudgetModal()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">SET BUDGET</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Monthly Category Limit</div>
-    <div class="field">
-      <div class="field-label">Category</div>
-      <select id="budgetCat" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none">
-        <option value="">Choose category</option>
-      </select>
-    </div>
-    <div class="field">
-      <div class="field-label">Monthly Limit (₦)</div>
-      <input type="number" id="budgetAmount" placeholder="e.g. 20000" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/>
-    </div>
-    <button class="btn btn-accent" onclick="saveBudget()">SAVE BUDGET</button>
-    <button onclick="closeBudgetModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">Cancel</button>
+    <div class="sh-tag">SET BUDGET</div>
+    <div class="sh-title" style="margin-bottom:20px">Monthly Category Limit</div>
+    <div class="field"><div class="field-label">Category</div><select id="budgetCat"><option value="">Choose category</option></select></div>
+    <div class="field"><div class="field-label">Monthly Limit (₦)</div><input type="number" id="budgetAmount" placeholder="e.g. 20000"/></div>
+    <button class="btn btn-primary" onclick="saveBudget()" style="margin-bottom:8px">Save Budget</button>
+    <button onclick="closeBudgetModal()" class="btn btn-ghost">Cancel</button>
   </div>
 </div>
 
 <!-- GOAL MODAL -->
 <div class="modal-overlay hidden" id="goalModal" onclick="closeGoalModal()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">NEW GOAL</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Set a Savings Goal</div>
-    <div class="field"><div class="field-label">Goal Name</div><input type="text" id="goalName" placeholder="e.g. New iPhone, Rent, Travel" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
-    <div class="field"><div class="field-label">Target Amount (₦)</div><input type="number" id="goalTarget" placeholder="e.g. 150000" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
-    <div class="field"><div class="field-label">Amount Saved So Far (₦)</div><input type="number" id="goalSaved" placeholder="0" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
-    <button class="btn btn-accent" onclick="saveGoal()">SAVE GOAL</button>
-    <button onclick="closeGoalModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">Cancel</button>
+    <div class="sh-tag">NEW GOAL</div>
+    <div class="sh-title" style="margin-bottom:20px">Set a Savings Goal</div>
+    <div class="field"><div class="field-label">Goal Name</div><input type="text" id="goalName" placeholder="e.g. New Phone, Rent, Travel"/></div>
+    <div class="field"><div class="field-label">Target Amount (₦)</div><input type="number" id="goalTarget" placeholder="e.g. 150000"/></div>
+    <div class="field"><div class="field-label">Amount Saved So Far (₦)</div><input type="number" id="goalSaved" placeholder="0"/></div>
+    <button class="btn btn-primary" onclick="saveGoal()" style="margin-bottom:8px">Save Goal</button>
+    <button onclick="closeGoalModal()" class="btn btn-ghost">Cancel</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>(function(){const s=document.createElement("script");s.src="https://js.paystack.co/v1/inline.js";s.async=true;document.head.appendChild(s);})();</script>
 <script>
-// Load Paystack without blocking
-(function(){const s=document.createElement('script');s.src='https://js.paystack.co/v1/inline.js';s.async=true;document.head.appendChild(s);})();
-</script>
-<script>
-// ══════════════════════════════════════════
-// ⚙️  CONFIG
-// ══════════════════════════════════════════
-const SUPABASE_URL     = "https://wouruhznwxiawruaojoy.supabase.co";
-const SUPABASE_ANON    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvdXJ1aHpud3hpYXdydWFvam95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNDYzNjIsImV4cCI6MjA5MDgyMjM2Mn0.NkgpPK2C2xlYJnGRkr0Zhonx-CO8CIKf9JOiDgn8OiM";
-const PAYSTACK_PK      = "pk_live_560e2cbc071f3755568cb57e6f7c593de5575940";
-const PLAN_KOBO        = 180000;
-
-// ══════════════════════════════════════════
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
-
+const SUPABASE_URL="https://wouruhznwxiawruaojoy.supabase.co";
+const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvdXJ1aHpud3hpYXdydWFvam95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNDYzNjIsImV4cCI6MjA5MDgyMjM2Mn0.NkgpPK2C2xlYJnGRkr0Zhonx-CO8CIKf9JOiDgn8OiM";
+const PAYSTACK_PK="pk_live_560e2cbc071f3755568cb57e6f7c593de5575940";
+const PLAN_KOBO=180000;
+const{createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_ANON);
 const CATS=["Food","Transport","Utilities","Health","Entertainment","Shopping","Education","Savings","Transfer","Other"];
-const COLORS={Food:"#FF6B35",Transport:"#4ECDC4",Utilities:"#FFE66D",Health:"#A8E6CF",Entertainment:"#FF8B94",Shopping:"#C3B1E1",Education:"#87CEEB",Savings:"#98FB98",Transfer:"#DEB887",Other:"#D3D3D3"};
+const COLORS={Food:"#EF4444",Transport:"#06B6D4",Utilities:"#F59E0B",Health:"#10B981",Entertainment:"#EC4899",Shopping:"#8B5CF6",Education:"#3B82F6",Savings:"#059669",Transfer:"#6366F1",Other:"#94A3B8"};
 const ICONS={Food:"🍔",Transport:"🚗",Utilities:"💡",Health:"💊",Entertainment:"🎬",Shopping:"🛍️",Education:"📚",Savings:"💰",Transfer:"↔️",Other:"📦"};
 const SAMPLES=["Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC LEKKI. Available balance: N284,500.00","Access Bank Alert: Debit of NGN 1,200.00 from your account ending 7743 for UBER TRIP on 03/04/2026. Bal: NGN 95,200.00","GTBank: Debit of N45,000.00 on 02-Apr-2026. Narration: TRANSFER TO JOHN ADEYEMI. Avail Bal: N288,000.00","Debit Alert! N8,900.00 deducted from GTBank Acct *4821 for DSTV SUBSCRIPTION on 01-Apr-2026. Bal: N333,000.00","Access Bank: Your account was debited N2,400.00 for PETROL STATION IKEJA on 01/04/2026. Avail bal: N96,400.00"];
 const BANKS_LIST=["GTBank","Access Bank","First Bank","Zenith Bank","UBA","Kuda Bank","Opay","Sterling Bank","Wema Bank","Stanbic IBTC"];
-const BANK_META={"GTBank":{logo:"🟠",color:"#FF6600"},"Access Bank":{logo:"🔴",color:"#CC0000"},"First Bank":{logo:"🔵",color:"#003087"},"Zenith Bank":{logo:"⚫",color:"#333333"},"UBA":{logo:"🟤",color:"#CC0000"},"Kuda Bank":{logo:"🟣",color:"#7F00FF"},"Opay":{logo:"🟢",color:"#00AA44"},"Sterling Bank":{logo:"🔶",color:"#FF8C00"},"Wema Bank":{logo:"🟦",color:"#0066CC"},"Stanbic IBTC":{logo:"🔷",color:"#0044AA"}};
+const BANK_META={"GTBank":{logo:"🟠",color:"#FF6600"},"Access Bank":{logo:"🔴",color:"#CC0000"},"First Bank":{logo:"🔵",color:"#003087"},"Zenith Bank":{logo:"⚫",color:"#1a1a1a"},"UBA":{logo:"🟤",color:"#8B0000"},"Kuda Bank":{logo:"🟣",color:"#7F00FF"},"Opay":{logo:"🟢",color:"#00AA44"},"Sterling Bank":{logo:"🔶",color:"#FF8C00"},"Wema Bank":{logo:"🟦",color:"#0066CC"},"Stanbic IBTC":{logo:"🔷",color:"#0044AA"}};
 let linkedBanks=JSON.parse(localStorage.getItem("pb_banks")||"[]");
-let selectedBankName="";
-let currentUser=null,userPro=false,expenses=[],parsedData=null,bankModalStep=0;
+let budgets=JSON.parse(localStorage.getItem("pb_budgets")||"{}");
+let goals=JSON.parse(localStorage.getItem("pb_goals")||"[]");
+let selectedBankName="",bankModalStep=0;
+let currentUser=null,userPro=false,expenses=[],parsedData=null;
+let isDark=localStorage.getItem("pb_theme")==="dark";
 
-// ── INIT ──────────────────────────────────
+function applyTheme(){document.documentElement.setAttribute("data-theme",isDark?"dark":"light");document.getElementById("themeBtn").textContent=isDark?"☀️":"🌙";}
+function toggleTheme(){isDark=!isDark;localStorage.setItem("pb_theme",isDark?"dark":"light");applyTheme();}
+applyTheme();
+
 async function init(){
   try{
-    // Check if user came from password reset email
     const hash=window.location.hash;
     if(hash&&hash.includes("type=recovery")){
-      // Extract tokens and set session
-      const params=new URLSearchParams(hash.substring(1));
-      const accessToken=params.get("access_token");
-      const refreshToken=params.get("refresh_token");
-      if(accessToken){
-        await sb.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
-        // Show password update screen
-        showUpdatePassword();
-        return;
-      }
+      const p=new URLSearchParams(hash.substring(1));
+      const at=p.get("access_token"),rt=p.get("refresh_token");
+      if(at){await sb.auth.setSession({access_token:at,refresh_token:rt});showUpdatePassword();return;}
     }
     const{data:{session},error}=await sb.auth.getSession();
-    if(error){console.error("Session error:",error);showAuth();return;}
-    if(session?.user){
-      currentUser=session.user;
-      try{await loadData();}catch(e){console.error("loadData error:",e);}
-      showApp();
-    }else{
-      showAuth();
-    }
-  }catch(e){
-    console.error("Init error:",e);
-    showAuth();
-  }
-}
-
-function showUpdatePassword(){
-  document.getElementById("authScreen").style.display="none";
-  document.getElementById("forgotScreen").style.display="none";
-  document.getElementById("appScreen").style.display="none";
-  // Create update password screen dynamically
-  let el=document.getElementById("updatePwScreen");
-  if(!el){
-    el=document.createElement("div");
-    el.id="updatePwScreen";
-    el.className="screen";
-    el.style.cssText="display:flex;align-items:center;justify-content:center;padding:32px 24px";
-    el.innerHTML=`
-      <div class="glow"></div>
-      <div style="width:100%;max-width:360px">
-        <div class="auth-logo">Pocket Brain</div>
-        <div class="auth-tagline">SET NEW PASSWORD</div>
-        <div class="auth-card">
-          <div class="field"><div class="field-label">New Password</div><input type="password" id="newPassword" placeholder="Min. 6 characters"/></div>
-          <div class="field"><div class="field-label">Confirm Password</div><input type="password" id="confirmPassword" placeholder="Repeat password"/></div>
-          <button class="btn btn-accent" onclick="updatePassword()">UPDATE PASSWORD</button>
-          <div class="auth-msg" id="updatePwMsg"></div>
-        </div>
-      </div>`;
-    document.body.appendChild(el);
-  }else{
-    el.style.display="flex";
-  }
-}
-
-async function updatePassword(){
-  const pw=document.getElementById("newPassword").value;
-  const confirm=document.getElementById("confirmPassword").value;
-  const msg=document.getElementById("updatePwMsg");
-  msg.textContent="";
-  if(pw.length<6){msg.style.color="var(--danger)";msg.textContent="Password must be at least 6 characters.";return;}
-  if(pw!==confirm){msg.style.color="var(--danger)";msg.textContent="Passwords do not match.";return;}
-  const btn=event.target;
-  btn.innerHTML='<span class="spinner"></span>UPDATING...';btn.disabled=true;
-  try{
-    const{error}=await sb.auth.updateUser({password:pw});
-    if(error)throw error;
-    msg.style.color="var(--accent2)";
-    msg.textContent="✓ Password updated! Redirecting...";
-    setTimeout(()=>{
-      document.getElementById("updatePwScreen").style.display="none";
-      // Clear hash from URL
-      history.replaceState(null,null," ");
-      showAuth();
-    },2000);
-  }catch(e){
-    msg.style.color="var(--danger)";
-    msg.textContent=e.message||"Something went wrong.";
-    btn.innerHTML="UPDATE PASSWORD";btn.disabled=false;
-  }
+    if(error||!session?.user){showAuth();return;}
+    currentUser=session.user;
+    try{await loadData();}catch(e){console.error(e);}
+    showApp();
+  }catch(e){console.error(e);showAuth();}
 }
 
 function showApp(){
-  try{
-    document.getElementById("authScreen").style.display="none";
-    document.getElementById("forgotScreen").style.display="none";
-    document.getElementById("appScreen").style.display="flex";
-    const h=new Date().getHours();
-    const name=(currentUser?.user_metadata?.full_name||"").split(" ")[0]||"there";
-    const g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
-    document.getElementById("greetingText").textContent=`${g}, ${name} 👋`;
-    userPro=currentUser?.user_metadata?.is_pro===true;
-    try{updateStats();}catch(e){console.error("updateStats:",e);}
-    try{renderBankCards();}catch(e){console.error("renderBankCards:",e);}
-  }catch(e){console.error("showApp:",e);}
+  document.getElementById("authScreen").style.display="none";
+  document.getElementById("forgotScreen").style.display="none";
+  document.getElementById("appScreen").style.display="flex";
+  userPro=currentUser?.user_metadata?.is_pro===true;
+  try{updateStats();}catch(e){}
+  try{renderBankCards();}catch(e){}
+  try{renderDashboard();}catch(e){}
 }
-
 function showAuth(){
   document.getElementById("authScreen").style.display="flex";
   document.getElementById("appScreen").style.display="none";
   document.getElementById("forgotScreen").style.display="none";
 }
-
 function showForgot(){
-  document.getElementById("authScreen").style.display="none";
+  const e=document.getElementById("authEmail").value.trim();
+  if(e)document.getElementById("resetEmail").value=e;
   document.getElementById("forgotScreen").style.display="flex";
-  const email=document.getElementById("authEmail").value.trim();
-  if(email)document.getElementById("resetEmail").value=email;
+  document.getElementById("authScreen").style.display="none";
   document.getElementById("resetMsg").textContent="";
 }
+function showLogin(){document.getElementById("forgotScreen").style.display="none";document.getElementById("authScreen").style.display="flex";}
 
-function showLogin(){
+function showUpdatePassword(){
+  document.getElementById("authScreen").style.display="none";
   document.getElementById("forgotScreen").style.display="none";
-  document.getElementById("authScreen").style.display="flex";
+  let el=document.getElementById("updatePwScreen");
+  if(!el){
+    el=document.createElement("div");el.id="updatePwScreen";el.className="screen";
+    el.style.cssText="display:flex;align-items:center;justify-content:center;padding:24px";
+    el.innerHTML=`<div style="width:100%;max-width:380px"><div style="text-align:center;margin-bottom:28px"><div class="auth-icon">🔑</div><div class="auth-title">New Password</div><div class="auth-sub">Set your new password below</div></div>
+    <div class="auth-card">
+      <div class="field"><div class="field-label">New Password</div><input type="password" id="newPassword" placeholder="Min. 6 characters"/></div>
+      <div class="field"><div class="field-label">Confirm Password</div><input type="password" id="confirmPassword" placeholder="Repeat password"/></div>
+      <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
+      <div class="auth-msg" id="updatePwMsg"></div>
+    </div></div>`;
+    document.body.appendChild(el);
+  }else{el.style.display="flex";}
 }
-
-// Safety net
-setTimeout(()=>{
-  const auth=document.getElementById("authScreen");
-  const app=document.getElementById("appScreen");
-  if(auth.style.display==="none"&&app.style.display==="none"){
-    showAuth();
-  }
-},4000);
-
-async function sendReset(){
-  const email=document.getElementById("resetEmail").value.trim();
-  const btn=document.getElementById("resetBtn");
-  const msg=document.getElementById("resetMsg");
-  msg.textContent="";
-  if(!email){msg.style.color="var(--danger)";msg.textContent="Please enter your email.";return;}
-  btn.innerHTML='<span class="spinner"></span>SENDING...';btn.disabled=true;
+async function updatePassword(){
+  const pw=document.getElementById("newPassword").value;
+  const c=document.getElementById("confirmPassword").value;
+  const msg=document.getElementById("updatePwMsg");
+  if(pw.length<6){msg.style.color="var(--danger)";msg.textContent="Min. 6 characters.";return;}
+  if(pw!==c){msg.style.color="var(--danger)";msg.textContent="Passwords don't match.";return;}
+  const btn=event.target;btn.innerHTML='<span class="spinner"></span>Updating...';btn.disabled=true;
   try{
-    const{error}=await sb.auth.resetPasswordForEmail(email,{
-      redirectTo: window.location.origin
-    });
+    const{error}=await sb.auth.updateUser({password:pw});
     if(error)throw error;
-    msg.style.color="var(--accent2)";
-    msg.textContent="✓ Reset link sent! Check your email.";
-    btn.innerHTML="SENT ✓";
-  }catch(e){
-    msg.style.color="var(--danger)";
-    msg.textContent=e.message||"Something went wrong.";
-    btn.innerHTML="SEND RESET LINK";btn.disabled=false;
-  }
+    msg.style.color="var(--accent2)";msg.textContent="✓ Updated! Redirecting...";
+    setTimeout(()=>{document.getElementById("updatePwScreen").style.display="none";history.replaceState(null,null," ");showAuth();},2000);
+  }catch(e){msg.style.color="var(--danger)";msg.textContent=e.message;btn.innerHTML="Update Password";btn.disabled=false;}
 }
 
-// ── AUTH ──────────────────────────────────
 let authMode="login";
 function setAuthTab(m){
   authMode=m;
-  document.getElementById("authTabLogin").className="auth-tab"+(m==="login"?" active":"");
-  document.getElementById("authTabSignup").className="auth-tab"+(m==="signup"?" active":"");
+  document.getElementById("authTabLogin").className="seg-btn"+(m==="login"?" active":"");
+  document.getElementById("authTabSignup").className="seg-btn"+(m==="signup"?" active":"");
   document.getElementById("authBtn").textContent=m==="login"?"LOGIN":"CREATE ACCOUNT";
   document.getElementById("authNameField").className="field"+(m==="signup"?"":" hidden");
-  document.getElementById("forgotLink").style.display=m==="login"?"block":"none";
+  document.getElementById("forgotWrap").style.display=m==="login"?"block":"none";
   document.getElementById("authMsg").textContent="";
 }
-
 async function handleAuth(){
   const email=document.getElementById("authEmail").value.trim();
   const pass=document.getElementById("authPassword").value;
   const name=document.getElementById("authName").value.trim();
-  const btn=document.getElementById("authBtn");
-  const msg=document.getElementById("authMsg");
+  const btn=document.getElementById("authBtn");const msg=document.getElementById("authMsg");
   msg.style.color="var(--danger)";msg.textContent="";
   if(!email||!pass){msg.textContent="Please fill in all fields.";return;}
-  btn.innerHTML='<span class="spinner"></span>LOADING...';btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Loading...';btn.disabled=true;
   try{
     if(authMode==="login"){
       const{error}=await sb.auth.signInWithPassword({email,password:pass});
@@ -617,403 +578,201 @@ async function handleAuth(){
       if(!name){msg.textContent="Please enter your name.";return;}
       const{error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
       if(error)throw error;
-      msg.style.color="var(--accent2)";
-      msg.textContent="Account created! Check your email to confirm.";
+      msg.style.color="var(--accent2)";msg.textContent="Account created! Check your email to confirm.";
     }
   }catch(e){msg.textContent=e.message||"Something went wrong.";}
   btn.innerHTML=authMode==="login"?"LOGIN":"CREATE ACCOUNT";btn.disabled=false;
 }
-
-async function signOut(){
-  await sb.auth.signOut();
-  currentUser=null;expenses=[];userPro=false;
-  hideProfile();showAuth();
+async function sendReset(){
+  const email=document.getElementById("resetEmail").value.trim();
+  const msg=document.getElementById("resetMsg");const btn=document.getElementById("resetBtn");
+  if(!email){msg.style.color="var(--danger)";msg.textContent="Enter your email.";return;}
+  btn.innerHTML='<span class="spinner"></span>Sending...';btn.disabled=true;
+  try{
+    const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+    if(error)throw error;
+    msg.style.color="var(--accent2)";msg.textContent="✓ Reset link sent! Check your email.";btn.innerHTML="Sent ✓";
+  }catch(e){msg.style.color="var(--danger)";msg.textContent=e.message;btn.innerHTML="Send Reset Link";btn.disabled=false;}
 }
+async function signOut(){await sb.auth.signOut();currentUser=null;expenses=[];userPro=false;hideProfile();showAuth();}
 
-// ── DATA ──────────────────────────────────
 async function loadData(){
   if(!currentUser)return;
   const{data,error}=await sb.from("expenses").select("*").eq("user_id",currentUser.id).order("date",{ascending:false});
   if(!error&&data)expenses=data;
 }
-
 async function saveExpense(exp){
-  const{data,error}=await sb.from("expenses").insert([{
-    user_id:currentUser.id,name:exp.name,amount:exp.amount,
-    category:exp.category,date:exp.date,source:exp.source||"manual"
-  }]).select().single();
-  if(!error&&data){expenses.unshift(data);updateStats();renderBankCards();}
+  const{data,error}=await sb.from("expenses").insert([{user_id:currentUser.id,name:exp.name,amount:exp.amount,category:exp.category,date:exp.date,source:exp.source||"manual"}]).select().single();
+  if(!error&&data){expenses.unshift(data);updateStats();renderBankCards();renderDashboard();}
   return!error;
 }
-
 async function updateExpCat(id,cat){
   await sb.from("expenses").update({category:cat}).eq("id",id).eq("user_id",currentUser.id);
   expenses=expenses.map(e=>e.id===id?{...e,category:cat}:e);
 }
 
-// ── HELPERS ───────────────────────────────
 function naira(n){return"₦"+Number(n).toLocaleString("en-NG");}
 function timeAgo(d){const diff=Math.floor((new Date()-new Date(d))/86400000);return diff===0?"Today":diff===1?"Yesterday":diff+"d ago";}
 function showToast(msg,type="success"){
-  const t=document.createElement("div");
-  t.className=`toast toast-${type}`;t.textContent=msg;
+  const t=document.createElement("div");t.className="toast t"+type[0];t.textContent=msg;
   document.body.appendChild(t);setTimeout(()=>t.remove(),2800);
 }
 
-// ── STATS ─────────────────────────────────
 function updateStats(){
   const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
   const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
   const top=Object.entries(catT).sort((a,b)=>b[1]-a[1])[0];
   const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
   document.getElementById("heroBalance").textContent=naira(Math.max(0,totalBal-total));
-  document.getElementById("heroSub").textContent=`${expenses.length} transaction${expenses.length!==1?"s":""} tracked`;
-  document.getElementById("statSpent").textContent=naira(total);
-  document.getElementById("statCount").textContent=expenses.length;
-  document.getElementById("statTop").textContent=top&&top[1]>0?`${ICONS[top[0]]} ${top[0]}`:"—";
+  document.getElementById("heroSub").textContent=expenses.length+" transaction"+(expenses.length!==1?"s":"")+" tracked";
+  document.getElementById("heroSpent").textContent=naira(total);
+  document.getElementById("heroCount").textContent=expenses.length;
+  document.getElementById("heroTop").textContent=top&&top[1]>0?ICONS[top[0]]:"—";
   document.getElementById("profileSpent").textContent=naira(total);
   document.getElementById("profileCount").textContent=expenses.length;
 }
 
-// ── TABS ──────────────────────────────────
+const TABS=["dashboard","accounts","import","history","insight"];
 function switchTab(t){
-  ["accounts","import","transactions","insight"].forEach(id=>{
-    const pane=document.getElementById("pane-"+id);
-    const tab=document.getElementById("tab-"+id);
+  TABS.forEach(id=>{
+    document.getElementById("pane-"+id).className="pane"+(id===t?" active":"");
     const nav=document.getElementById("nav-"+id);
-    pane.className=pane.className.replace(" hidden","").replace("hidden","");
-    if(id!==t)pane.classList.add("hidden");
-    tab.className="tab"+(id===t?" active":"");
-    if(nav)nav.className="nav-item"+(id===t?" active":"");
+    if(nav)nav.className="nav-btn"+(id===t?" active":"");
   });
   document.getElementById("appScroll").scrollTop=0;
-  if(t==="transactions")renderTx();
+  if(t==="history")renderTx();
   if(t==="insight")renderInsight();
+  if(t==="dashboard")renderDashboard();
 }
 
-// ── BANK CARDS ────────────────────────────
+function renderDashboard(){
+  const el=document.getElementById("recentTx");
+  if(expenses.length===0){
+    el.innerHTML='<div class="empty"><div class="empty-ico">📭</div><div class="empty-title">No transactions yet</div><div class="empty-desc">Import a bank alert to get started</div></div>';
+  }else{
+    el.innerHTML=expenses.slice(0,3).map(e=>
+      '<div class="tx"><div class="tx-ico" style="background:'+COLORS[e.category]+'18">'+ICONS[e.category]+'</div><div style="flex:1;min-width:0"><div class="tx-name">'+e.name+'</div><div class="tx-meta"><span class="tx-date">'+timeAgo(e.date)+'</span></div></div><div class="tx-amt" style="color:'+COLORS[e.category]+'">'+naira(e.amount)+'</div></div>'
+    ).join("");
+  }
+  const p=getPersonality();const dp=document.getElementById("dashPersonality");
+  if(p&&expenses.length>0){dp.innerHTML='<div class="personality-card"><div class="p-name">'+p.name+'</div><div class="p-msg">'+p.msg+'</div></div>';}
+  else dp.innerHTML="";
+}
+
 function renderBankCards(){
   if(linkedBanks.length===0){
-    document.getElementById("bankCards").innerHTML=`
-      <div style="text-align:center;padding:32px 20px;color:var(--muted)">
-        <div style="font-size:40px;margin-bottom:12px">🏦</div>
-        <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No banks linked yet</div>
-        <div style="font-size:12px;line-height:1.6">Tap below to add your bank account and start tracking your spending</div>
-      </div>`;
-    return;
+    document.getElementById("bankCards").innerHTML='<div class="empty card"><div class="empty-ico">🏦</div><div class="empty-title">No banks linked yet</div><div class="empty-desc">Add your bank account to track spending</div></div>';return;
   }
   document.getElementById("bankCards").innerHTML=linkedBanks.map((bank,i)=>{
     const spent=expenses.filter(e=>e.source===bank.id).reduce((s,e)=>s+Number(e.amount),0);
-    const bal=Number(bank.balance||0);
-    const pct=bal>0?((spent/bal)*100).toFixed(1):"0.0";
-    return`<div class="bank-card" style="background:linear-gradient(135deg,${bank.color}18,rgba(255,255,255,0.02));border:1px solid ${bank.color}30">
-      <div class="bank-header">
-        <div class="bank-logo-row"><div class="bank-icon" style="background:${bank.color}25">${bank.logo}</div>
-        <div><div class="bank-name">${bank.name}</div><div class="bank-acc">${bank.account}</div></div></div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="linked-badge">LINKED ✓</div>
-          <button onclick="unlinkBank(${i})" style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);color:#FF6B35;border-radius:8px;padding:4px 8px;font-size:9px;font-family:var(--font-m);cursor:pointer;letter-spacing:1px">UNLINK</button>
-        </div>
-      </div>
-      <div class="bank-nums">
-        <div><div class="num-label">BALANCE</div><div class="num-val">${naira(bal)}</div></div>
-        <div style="text-align:right"><div class="num-label">TRACKED SPEND</div><div class="num-val" style="color:var(--danger)">${naira(spent)}</div></div>
-      </div>
-      <div class="bar-track"><div class="bar-fill" style="background:${bank.color};width:${Math.min(pct,100)}%"></div></div>
-      <div class="bar-note">${pct}% of balance spent</div>
-    </div>`;
+    const bal=Number(bank.balance||0);const pct=bal>0?Math.min((spent/bal)*100,100):0;
+    return'<div class="bank-card"><div class="bank-head"><div class="bank-left"><div class="bank-logo" style="background:'+bank.color+'18">'+bank.logo+'</div><div><div class="bank-name">'+bank.name+'</div><div class="bank-acc">'+bank.account+'</div></div></div><div style="display:flex;gap:6px;align-items:center"><div class="linked-pill">LINKED ✓</div><button class="unlink-btn" onclick="unlinkBank('+i+')">UNLINK</button></div></div><div class="bank-nums"><div><div class="amt-label">BALANCE</div><div class="amt-val">'+naira(bal)+'</div></div><div style="text-align:right"><div class="amt-label">TRACKED SPEND</div><div class="amt-val" style="color:var(--danger)">'+naira(spent)+'</div></div></div><div class="prog-track"><div class="prog-fill" style="background:'+bank.color+';width:'+pct+'%"></div></div><div class="prog-note">'+pct.toFixed(1)+'% of balance spent</div></div>';
   }).join("");
 }
+function unlinkBank(i){if(!confirm("Remove "+linkedBanks[i].name+"? Transactions won't be deleted."))return;linkedBanks.splice(i,1);localStorage.setItem("pb_banks",JSON.stringify(linkedBanks));renderBankCards();updateStats();showToast("Bank unlinked");}
 
-// ── IMPORT ────────────────────────────────
-function setSample(i){document.getElementById("alertInput").value=SAMPLES[i];}
-
-async function parseAlert(){
-  const text=document.getElementById("alertInput").value.trim();
-  if(!text)return;
-  const btn=document.getElementById("parseBtn");
-  btn.innerHTML='<span class="spinner"></span>PARSING...';btn.disabled=true;
-  document.getElementById("parsedCard").classList.add("hidden");
-  document.getElementById("parseError").classList.add("hidden");
-  try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({messages:[{role:"user",content:`Extract transaction info from this Nigerian bank alert. Return ONLY a JSON object, no markdown:\n{"name":"merchant name","amount":number,"category":"Food|Transport|Utilities|Health|Entertainment|Shopping|Education|Savings|Transfer|Other","date":"YYYY-MM-DD","bank":"bank name"}\n\nAlert: "${text}"\n\nJSON only:`}]})});
-    const data=await res.json();
-    const raw=data.content?.[0]?.text||"{}";
-    parsedData=JSON.parse(raw.replace(/```json|```/g,"").trim());
-    showParsed();
-  }catch{document.getElementById("parseError").classList.remove("hidden");}
-  btn.innerHTML="🤖 PARSE ALERT";btn.disabled=false;
-}
-
-function showParsed(){
-  document.getElementById("pName").textContent=parsedData.name||"—";
-  document.getElementById("pAmt").textContent=naira(parsedData.amount||0);
-  document.getElementById("pDate").textContent=parsedData.date||"—";
-  document.getElementById("pBank").textContent=parsedData.bank||"—";
-  document.getElementById("parsedCats").innerHTML=CATS.map(c=>`<button class="cat-pill" onclick="selectParsedCat('${c}')"
-    style="${parsedData.category===c?`border:2px solid ${COLORS[c]};background:${COLORS[c]}22;color:${COLORS[c]}`:""}">${ICONS[c]} ${c}</button>`).join("");
-  document.getElementById("parsedCard").classList.remove("hidden");
-}
-
-function selectParsedCat(cat){parsedData.category=cat;showParsed();}
-
-async function confirmParsed(){
-  if(!parsedData)return;
-  const src=parsedData.bank?.toLowerCase().includes("access")?"access":"gtb";
-  const ok=await saveExpense({name:parsedData.name,amount:parsedData.amount,category:parsedData.category||"Other",date:parsedData.date||new Date().toISOString().split("T")[0],source:src});
-  if(ok){document.getElementById("alertInput").value="";document.getElementById("parsedCard").classList.add("hidden");parsedData=null;showToast("Transaction saved ✓");switchTab("transactions");}
-  else showToast("Failed to save. Try again.","error");
-}
-
-// ── TRANSACTIONS ──────────────────────────
-function renderTx(){
-  const list=document.getElementById("txList");
-  if(expenses.length===0){list.innerHTML=`<div class="empty-state"><div style="font-size:36px;margin-bottom:12px">📭</div><div>No transactions yet</div><div style="font-size:11px;margin-top:6px">Import a bank alert to get started</div></div>`;return;}
-  list.innerHTML=expenses.map((e,i)=>{
-    const bank=e.source==="access"?"🔴 Access":"🟠 GTBank";
-    return`<div class="tx" style="animation:fadeUp .3s ease ${i*.04}s both">
-      <div class="tx-icon" style="background:${COLORS[e.category]}22">${ICONS[e.category]}</div>
-      <div class="tx-info"><div class="tx-name">${e.name}</div>
-        <div class="tx-meta"><span class="tx-date">${timeAgo(e.date)}</span><span class="tx-bank-tag">${bank}</span></div>
-      </div>
-      <div class="tx-right"><div class="tx-amt" style="color:${COLORS[e.category]}">${naira(e.amount)}</div>
-        <button class="tx-edit" onclick="toggleEdit('${e.id}')">edit</button></div>
-    </div>
-    <div id="editor-${e.id}" class="hidden" style="background:rgba(255,255,255,0.02);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid var(--border)">
-      <div class="cat-editor-label">CHANGE CATEGORY</div>
-      <div class="cat-pills">${CATS.map(c=>`<button class="cat-pill" onclick="updateCat('${e.id}','${c}')"
-        style="${e.category===c?`border:2px solid ${COLORS[c]};background:${COLORS[c]}22;color:${COLORS[c]}`:""}">${ICONS[c]} ${c}</button>`).join("")}</div>
-    </div>`;
-  }).join("");
-}
-
-function toggleEdit(id){
-  const ed=document.getElementById("editor-"+id);
-  ed.classList.toggle("hidden");
-}
-
-async function updateCat(id,cat){
-  await updateExpCat(id,cat);
-  document.getElementById("editor-"+id).classList.add("hidden");
-  renderTx();updateStats();showToast("Category updated ✓");
-}
-
-// ── INSIGHT ───────────────────────────────
-function renderInsight(){
-  const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
-  const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
-  const sorted=Object.entries(catT).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
-  const maxV=sorted[0]?.[1]||1;
-  document.getElementById("breakdown").innerHTML=sorted.length?sorted.map(([cat,val])=>`
-    <div class="breakdown-row">
-      <div class="br-header"><span>${ICONS[cat]} ${cat}</span><span style="font-weight:700;color:${COLORS[cat]}">${naira(val)}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="background:${COLORS[cat]};width:${(val/maxV)*100}%"></div></div>
-      <div class="bar-note">${total>0?((val/total)*100).toFixed(1)+"% of total":""}</div>
-    </div>`).join(""):`<div style="color:var(--muted);font-size:13px">No data yet</div>`;
-  // Render all new features
-  renderPersonality();
-  detectBills();
-  renderForecast();
-  renderMerchantIntel();
-  renderBudgets();
-  renderGoals();
-  checkBrokeAlert();
-  // Restore broke threshold input
-  const t=localStorage.getItem("pb_broke_threshold");
-  if(t)document.getElementById("brokeThreshold").value=t;
-}
-
-function handleInsightClick(){if(!userPro){showPaywall();return;}getInsight();}
-
-async function getInsight(){
-  const btn=document.getElementById("insightBtn");
-  btn.innerHTML='<span class="spinner"></span>ANALYZING...';btn.disabled=true;
-  document.getElementById("aiContent").innerHTML=`<div class="ai-placeholder" style="animation:pulse 1.5s infinite">Reading your transactions...</div>`;
-  const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
-  const summary=expenses.map(e=>`${e.name}: ${naira(e.amount)} (${e.category}) on ${e.date}`).join("\n");
-  try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({system:"You are a sharp, direct Nigerian personal finance advisor. Be specific, use actual data, never give generic advice.",
-        messages:[{role:"user",content:`Analyze these bank transactions. Give 3 short punchy sentences of honest advice, mention actual merchant names and numbers. End with ONE specific action they can take this week to save money.\n\nTransactions:\n${summary}\nTotal: ${naira(total)}`}]})});
-    const data=await res.json();
-    document.getElementById("aiContent").innerHTML=`<div class="ai-text">${data.content?.[0]?.text||"Could not load."}</div>`;
-  }catch{document.getElementById("aiContent").innerHTML=`<div class="ai-text" style="color:var(--muted)">Failed. Check connection and try again.</div>`;}
-  btn.innerHTML="🤖 ANALYZE MY SPENDING";btn.disabled=false;
-}
-
-// ── PAYWALL ───────────────────────────────
-function showPaywall(){document.getElementById("paywallOverlay").classList.remove("hidden");}
-function hidePaywall(){document.getElementById("paywallOverlay").classList.add("hidden");}
-
-function initPaystack(){
-  const handler=PaystackPop.setup({
-    key:PAYSTACK_PK,email:currentUser.email,amount:PLAN_KOBO,currency:"NGN",
-    ref:"pb_"+Date.now(),metadata:{user_id:currentUser.id},
-    onSuccess:async(tx)=>{await verifyPayment(tx.reference);},
-    onCancel:()=>showToast("Payment cancelled","error"),
-  });
-  handler.openIframe();
-}
-
-async function verifyPayment(ref){
-  try{
-    const res=await fetch("/api/verify-payment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reference:ref})});
-    const data=await res.json();
-    if(data.success){
-      await sb.auth.updateUser({data:{is_pro:true}});
-      userPro=true;hidePaywall();showToast("Welcome to Pro! 🎉");updateProfileUI();getInsight();
-    }else showToast("Payment verification failed","error");
-  }catch{showToast("Verification error. Contact support.","error");}
-}
-
-// ── PROFILE ───────────────────────────────
-function showProfile(){
-  const meta=currentUser?.user_metadata||{};
-  document.getElementById("profileName").textContent=meta.full_name||currentUser?.email?.split("@")[0]||"User";
-  document.getElementById("profileEmail").textContent=currentUser?.email||"";
-  updateProfileUI();
-  document.getElementById("profileOverlay").classList.remove("hidden");
-}
-function hideProfile(){document.getElementById("profileOverlay").classList.add("hidden");}
-function updateProfileUI(){
-  document.getElementById("profilePlanBadge").innerHTML=userPro
-    ?`<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-weight:700">✦ PRO MEMBER</span>`
-    :`<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,0.06);color:var(--muted)">FREE PLAN · <span onclick="hideProfile();showPaywall()" style="color:var(--accent);cursor:pointer">Upgrade →</span></span>`;
-}
-
-// ── BANK MODAL ────────────────────────────
 function openBankModal(){bankModalStep=0;selectedBankName="";renderBankModal();document.getElementById("bankModal").classList.remove("hidden");}
 function closeBankModal(){document.getElementById("bankModal").classList.add("hidden");}
 function renderBankModal(){
   const el=document.getElementById("bankModalContent");
   if(bankModalStep===0){
-    el.innerHTML=`<div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">LINK BANK</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px">Choose your bank</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Select the bank you want to track</div>
-    ${BANKS_LIST.map(b=>`<button class="bank-option" onclick="selectBank('${b}')">${BANK_META[b]?.logo||'🏦'} ${b}</button>`).join("")}`;
+    el.innerHTML='<div class="sh-tag">LINK BANK</div><div class="sh-title">Choose your bank</div><div class="sh-sub">Select the bank you want to track</div>'+BANKS_LIST.map(b=>'<button class="bank-opt" onclick="selectBank(\'"+b+"\')">'+( BANK_META[b]&&BANK_META[b].logo||"🏦")+' '+b+"</button>").join("");
   }else if(bankModalStep===1){
-    el.innerHTML=`<div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px">${selectedBankName}</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Enter your account details</div>
-    <div class="field"><div class="field-label">Last 4 digits of account number</div><input type="number" id="modalAccNum" placeholder="e.g. 4821" maxlength="4"/></div>
-    <div class="field"><div class="field-label">Current Balance (₦)</div><input type="number" id="modalBalance" placeholder="e.g. 150000"/></div>
-    <button class="btn btn-accent" onclick="confirmBankLink()">LINK BANK ✓</button>
-    <button onclick="bankModalStep=0;renderBankModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">← Back</button>`;
+    el.innerHTML='<div class="sh-tag">ACCOUNT DETAILS</div><div class="sh-title" style="margin-bottom:20px">'+selectedBankName+'</div><div class="field"><div class="field-label">Last 4 digits of account number</div><input type="number" id="modalAccNum" placeholder="e.g. 4821"/></div><div class="field"><div class="field-label">Current Balance (₦)</div><input type="number" id="modalBalance" placeholder="e.g. 150000"/></div><button class="btn btn-primary" onclick="confirmBankLink()" style="margin-bottom:8px">Link Bank ✓</button><button onclick="bankModalStep=0;renderBankModal()" class="btn btn-ghost">← Back</button>';
   }else{
-    el.innerHTML=`<div style="text-align:center;padding:24px 0">
-      <div style="font-size:48px;margin-bottom:12px">✅</div>
-      <div style="font-family:var(--font-d);font-size:22px;font-weight:700">${selectedBankName} Linked!</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">Your account is now being tracked</div>
-    </div>`;
+    el.innerHTML='<div style="text-align:center;padding:24px 0"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:22px;font-weight:800;color:var(--text)">'+selectedBankName+" Linked!</div><div style='font-size:13px;color:var(--text2);margin-top:8px'>Your account is now being tracked</div></div>";
   }
 }
-
-function unlinkBank(index){
-  if(!confirm(`Remove ${linkedBanks[index].name}? This won't delete your transactions.`))return;
-  linkedBanks.splice(index,1);
-  localStorage.setItem("pb_banks",JSON.stringify(linkedBanks));
-  renderBankCards();updateStats();
-  showToast("Bank unlinked");
-}
-
-function selectBank(name){
-  selectedBankName=name;
-  bankModalStep=1;
-  renderBankModal();
-}
-
+function selectBank(name){selectedBankName=name;bankModalStep=1;renderBankModal();}
 function confirmBankLink(){
   const accNum=document.getElementById("modalAccNum").value.trim();
   const balance=parseFloat(document.getElementById("modalBalance").value)||0;
-  if(!accNum){showToast("Enter last 4 digits of account number","error");return;}
-  const meta=BANK_META[selectedBankName]||{logo:"🏦",color:"#6366F1"};
-  const newBank={id:"bank_"+Date.now(),name:selectedBankName,logo:meta.logo,color:meta.color,account:"**** "+accNum,balance:balance};
-  linkedBanks.push(newBank);
+  if(!accNum){showToast("Enter last 4 digits","error");return;}
+  const meta=BANK_META[selectedBankName]||{logo:"🏦",color:"#2563EB"};
+  linkedBanks.push({id:"bank_"+Date.now(),name:selectedBankName,logo:meta.logo,color:meta.color,account:"**** "+accNum,balance});
   localStorage.setItem("pb_banks",JSON.stringify(linkedBanks));
-  bankModalStep=2;renderBankModal();
-  setTimeout(()=>{closeBankModal();renderBankCards();updateStats();},2000);
+  bankModalStep=2;renderBankModal();setTimeout(()=>{closeBankModal();renderBankCards();updateStats();},2000);
 }
 
-// ── SPENDING PERSONALITY ──────────────────
+function setSample(i){document.getElementById("alertInput").value=SAMPLES[i];}
+async function parseAlert(){
+  const text=document.getElementById("alertInput").value.trim();if(!text)return;
+  const btn=document.getElementById("parseBtn");
+  btn.innerHTML='<span class="spinner"></span>Parsing...';btn.disabled=true;
+  document.getElementById("parsedCard").classList.add("hidden");document.getElementById("parseError").classList.add("hidden");
+  try{
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:[{role:"user",content:'Extract transaction info from this Nigerian bank alert. Return ONLY JSON no markdown:\n{"name":"merchant name","amount":number,"category":"Food|Transport|Utilities|Health|Entertainment|Shopping|Education|Savings|Transfer|Other","date":"YYYY-MM-DD","bank":"bank name"}\n\nAlert: "'+text+'"\n\nJSON only:'}]})});
+    const data=await res.json();
+    parsedData=JSON.parse((data.content?.[0]?.text||"{}").replace(/```json|```/g,"").trim());
+    showParsed();
+  }catch{document.getElementById("parseError").classList.remove("hidden");}
+  btn.innerHTML="🤖 Parse Alert";btn.disabled=false;
+}
+function showParsed(){
+  document.getElementById("pName").textContent=parsedData.name||"—";
+  document.getElementById("pAmt").textContent=naira(parsedData.amount||0);
+  document.getElementById("pDate").textContent=parsedData.date||"—";
+  document.getElementById("pBank").textContent=parsedData.bank||"—";
+  document.getElementById("parsedCats").innerHTML=CATS.map(c=>'<button class="cat-chip" onclick="selectParsedCat(\'"+c+"\')" style="'+( parsedData.category===c?"border-color:"+COLORS[c]+";background:"+COLORS[c]+"18;color:"+COLORS[c]:"")+'">'+ICONS[c]+" "+c+"</button>").join("");
+  document.getElementById("parsedCard").classList.remove("hidden");
+}
+function selectParsedCat(cat){parsedData.category=cat;showParsed();}
+async function confirmParsed(){
+  if(!parsedData)return;
+  const src=parsedData.bank?.toLowerCase().includes("access")?"access":"gtb";
+  const ok=await saveExpense({name:parsedData.name,amount:parsedData.amount,category:parsedData.category||"Other",date:parsedData.date||new Date().toISOString().split("T")[0],source:src});
+  if(ok){document.getElementById("alertInput").value="";document.getElementById("parsedCard").classList.add("hidden");parsedData=null;showToast("Transaction saved ✓");switchTab("history");}
+  else showToast("Failed to save","error");
+}
+
+function renderTx(){
+  const list=document.getElementById("txList");
+  document.getElementById("histCount").textContent=expenses.length+" total";
+  if(expenses.length===0){list.innerHTML='<div class="empty"><div class="empty-ico">📭</div><div class="empty-title">No transactions yet</div><div class="empty-desc">Go to Import to add your first transaction</div></div>';return;}
+  list.innerHTML=expenses.map((e,i)=>{
+    const bank=e.source==="access"?"🔴 Access":"🟠 GTBank";
+    return'<div class="tx" style="animation:fadeUp .3s ease '+i*.04+'s both"><div class="tx-ico" style="background:'+COLORS[e.category]+'18">'+ICONS[e.category]+'</div><div style="flex:1;min-width:0"><div class="tx-name">'+e.name+'</div><div class="tx-meta"><span class="tx-date">'+timeAgo(e.date)+'</span><span class="tx-tag">'+bank+'</span></div></div><div style="text-align:right;flex-shrink:0"><div class="tx-amt" style="color:'+COLORS[e.category]+'">'+naira(e.amount)+'</div><button class="tx-edit" onclick="toggleEdit(\'"+e.id+"\'")">edit category</button></div></div><div id="editor-'+e.id+'" class="hidden cat-edit-row"><div class="cat-edit-lbl">CHANGE CATEGORY</div><div class="cat-grid">'+CATS.map(c=>'<button class="cat-chip" onclick="updateCat(\'"+e.id+"\',\'"+c+"\')" style="'+( e.category===c?"border-color:"+COLORS[c]+";background:"+COLORS[c]+"18;color:"+COLORS[c]:"")+'">'+ICONS[c]+" "+c+"</button>").join("")+"</div></div>";
+  }).join("");
+}
+function toggleEdit(id){const ed=document.getElementById("editor-"+id);ed.classList.toggle("hidden");}
+async function updateCat(id,cat){await updateExpCat(id,cat);document.getElementById("editor-"+id).classList.add("hidden");renderTx();updateStats();showToast("Category updated ✓");}
+
+function renderInsight(){
+  renderPersonality();renderBreakdown();renderForecast();detectBills();renderMerchantIntel();renderBudgets();renderGoals();checkBrokeAlert();
+  const t=localStorage.getItem("pb_broke_threshold");if(t)document.getElementById("brokeThreshold").value=t;
+}
+
 const PERSONALITIES=[
   {name:"Food Goblin 🍔",condition:c=>c==="Food",msg:"Most of your money goes to food. You eat well — maybe too well."},
-  {name:"Road Warrior 🚗",condition:c=>c==="Transport",msg:"Transport is eating your budget. Consider carpooling or working closer to home."},
-  {name:"Entertainment King 🎬",condition:c=>c==="Entertainment",msg:"You spend heavily on fun. Life is short, but your savings shouldn't be."},
-  {name:"Bill Payer 💡",condition:c=>c==="Utilities",msg:"Your utilities are your biggest expense. Time to audit those subscriptions."},
-  {name:"Shopaholic 🛍️",condition:c=>c==="Shopping",msg:"Shopping is your weakness. You treat yourself well — maybe a little too well."},
-  {name:"Transfer Machine ↔️",condition:c=>c==="Transfer",msg:"You move money around a lot. Make sure it's going somewhere useful."},
-  {name:"Balanced Spender ⚖️",condition:()=>true,msg:"Your spending is spread across categories. You're relatively balanced."},
+  {name:"Road Warrior 🚗",condition:c=>c==="Transport",msg:"Transport is your biggest expense. Consider carpooling."},
+  {name:"Entertainment King 🎬",condition:c=>c==="Entertainment",msg:"You spend heavily on fun. Life is short, but so is your savings."},
+  {name:"Bill Payer 💡",condition:c=>c==="Utilities",msg:"Utilities dominate your spending. Time to audit those subscriptions."},
+  {name:"Shopaholic 🛍️",condition:c=>c==="Shopping",msg:"Shopping is your weakness. You treat yourself a little too well."},
+  {name:"Transfer Machine ↔️",condition:c=>c==="Transfer",msg:"You move money constantly. Make sure it's going somewhere useful."},
+  {name:"Balanced Spender ⚖️",condition:()=>true,msg:"Your spending is spread relatively evenly across categories."},
 ];
-
 function getPersonality(){
   const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
   const top=Object.entries(catT).sort((a,b)=>b[1]-a[1])[0];
   if(!top||top[1]===0)return null;
   return PERSONALITIES.find(p=>p.condition(top[0]))||PERSONALITIES[PERSONALITIES.length-1];
 }
-
 function renderPersonality(){
-  const p=getPersonality();
-  const el=document.getElementById("personalityContent");
-  if(!p||expenses.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add transactions to reveal your spending personality</div>`;return;}
-  el.innerHTML=`
-    <div style="text-align:center;padding:8px 0">
-      <div style="font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--accent);margin-bottom:8px">${p.name}</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.6">${p.msg}</div>
-    </div>`;
+  const p=getPersonality();const el=document.getElementById("personalityCard");
+  if(!p||expenses.length===0){el.innerHTML='<div class="feat-card"><div style="font-size:13px;color:var(--text2)">Add transactions to reveal your spending personality</div></div>';return;}
+  el.innerHTML='<div class="personality-card"><div class="p-name">'+p.name+'</div><div class="p-msg">'+p.msg+'</div></div>';
 }
-
-// ── BROKE ALERT ───────────────────────────
-function saveBrokeAlert(){
-  const val=document.getElementById("brokeThreshold").value;
-  if(!val){showToast("Enter an amount","error");return;}
-  localStorage.setItem("pb_broke_threshold",val);
-  document.getElementById("brokeAlertMsg").textContent=`✓ You'll be alerted when balance drops below ${naira(val)}`;
-  showToast("Broke alert saved ✓");
+function renderBreakdown(){
+  const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
+  const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
+  const sorted=Object.entries(catT).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const maxV=sorted[0]?.[1]||1;
+  document.getElementById("breakdown").innerHTML=sorted.length?sorted.map(([cat,val])=>'<div class="bdown-row"><div class="bdown-head"><span>'+ICONS[cat]+" "+cat+'</span><span style="color:'+COLORS[cat]+'">'+naira(val)+'</span></div><div class="prog-track"><div class="prog-fill" style="background:'+COLORS[cat]+";width:"+(val/maxV*100)+'%"></div></div><div class="prog-note">'+(total>0?(val/total*100).toFixed(1)+"% of total":"")+"</div></div>").join(""):"<div style='font-size:13px;color:var(--text2)'>No transactions yet</div>";
 }
-
-function checkBrokeAlert(){
-  const threshold=parseFloat(localStorage.getItem("pb_broke_threshold")||"0");
-  if(!threshold)return;
-  const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
-  const totalSpent=expenses.reduce((s,e)=>s+Number(e.amount),0);
-  const net=totalBal-totalSpent;
-  if(net<threshold&&net>=0){
-    showToast(`⚠️ Balance is ${naira(net)} — below your ₦${threshold.toLocaleString()} alert!`,"error");
-  }
-}
-
-// ── BILL DETECTOR ─────────────────────────
-function detectBills(){
-  const el=document.getElementById("billDetector");
-  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add more transactions to detect recurring bills</div>`;return;}
-  const nameCounts={};
-  expenses.forEach(e=>{
-    const key=e.name.toLowerCase().trim();
-    nameCounts[key]=(nameCounts[key]||0)+1;
-  });
-  const recurring=Object.entries(nameCounts).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
-  if(recurring.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No recurring bills detected yet</div>`;return;}
-  el.innerHTML=recurring.map(([name,count])=>{
-    const exps=expenses.filter(e=>e.name.toLowerCase().trim()===name);
-    const avg=exps.reduce((s,e)=>s+Number(e.amount),0)/exps.length;
-    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div>
-        <div style="font-size:13px;font-weight:600;text-transform:capitalize">${name}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${count}x detected</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-weight:700;color:var(--danger)">${naira(avg)}</div>
-        <div style="font-size:10px;color:var(--muted)">avg/time</div>
-      </div>
-    </div>`;
-  }).join("");
-}
-
-// ── SPENDING FORECAST ─────────────────────
 function renderForecast(){
   const el=document.getElementById("forecastContent");
-  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add at least 3 transactions to see forecast</div>`;return;}
+  if(!userPro){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>Upgrade to Pro to see spending forecast</div>";return;}
+  if(expenses.length<3){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>Add at least 3 transactions to see forecast</div>";return;}
   const now=new Date();
   const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const dayOfMonth=now.getDate();
@@ -1022,172 +781,142 @@ function renderForecast(){
   const spentSoFar=thisMonthExp.reduce((s,e)=>s+Number(e.amount),0);
   const dailyRate=dayOfMonth>0?spentSoFar/dayOfMonth:0;
   const projectedTotal=dailyRate*daysInMonth;
-  const daysLeft=daysInMonth-dayOfMonth;
-  const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
-  el.innerHTML=`
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <div style="flex:1;background:rgba(255,107,53,0.1);border-radius:12px;padding:12px;border:1px solid rgba(255,107,53,0.2)">
-        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">PROJECTED SPEND</div>
-        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--danger)">${naira(Math.round(projectedTotal))}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">this month</div>
-      </div>
-      <div style="flex:1;background:rgba(99,102,241,0.1);border-radius:12px;padding:12px;border:1px solid rgba(99,102,241,0.2)">
-        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">DAILY RATE</div>
-        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--accent)">${naira(Math.round(dailyRate))}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">per day</div>
-      </div>
-    </div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.6">
-      At your current rate, you'll spend <strong style="color:var(--text)">${naira(Math.round(projectedTotal))}</strong> this month. 
-      ${daysLeft} days left. ${dailyRate>0?`Try to keep daily spending under ${naira(Math.round(dailyRate*0.8))} to save more.`:""}
-    </div>`;
+  el.innerHTML="<div class='forecast-grid'><div class='f-block'><div class='f-lbl'>PROJECTED SPEND</div><div class='f-val' style='color:var(--danger)'>"+naira(Math.round(projectedTotal))+"</div><div style='font-size:11px;color:var(--text2);margin-top:2px'>this month</div></div><div class='f-block'><div class='f-lbl'>DAILY RATE</div><div class='f-val' style='color:var(--accent)'>"+naira(Math.round(dailyRate))+"</div><div style='font-size:11px;color:var(--text2);margin-top:2px'>per day</div></div></div><div style='font-size:13px;color:var(--text2);line-height:1.6'>At your current rate you'll spend <strong style='color:var(--text)'>"+naira(Math.round(projectedTotal))+"</strong> this month. "+(daysInMonth-dayOfMonth)+" days remaining.</div>";
 }
-
-// ── MERCHANT INTEL ────────────────────────
-function renderMerchantIntel(){
-  const el=document.getElementById("merchantIntel");
-  if(expenses.length<2){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add more transactions to see merchant insights</div>`;return;}
-  const merchants={};
-  expenses.forEach(e=>{
-    const k=e.name;
-    if(!merchants[k])merchants[k]={total:0,count:0};
-    merchants[k].total+=Number(e.amount);
-    merchants[k].count++;
-  });
-  const top=Object.entries(merchants).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
-  el.innerHTML=top.map(([name,data])=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div>
-        <div style="font-size:13px;font-weight:600">${name}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${data.count} transaction${data.count>1?"s":""}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-weight:700;color:var(--danger)">${naira(data.total)}</div>
-        <div style="font-size:10px;color:var(--muted)">${naira(Math.round(data.total/data.count))} avg</div>
-      </div>
-    </div>`).join("");
-}
-
-// ── WEEKLY SUMMARY ────────────────────────
-function handleWeeklySummaryClick(){if(!userPro){showPaywall();return;}generateWeeklySummary();}
-
-async function generateWeeklySummary(){
-  const btn=document.getElementById("weeklyBtn");
-  btn.innerHTML='<span class="spinner"></span>GENERATING...';btn.disabled=true;
-  const weekAgo=new Date(Date.now()-7*24*60*60*1000).toISOString().split("T")[0];
-  const weekExp=expenses.filter(e=>e.date>=weekAgo);
-  if(weekExp.length===0){
-    document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--muted)">No transactions in the last 7 days</div>`;
-    btn.innerHTML="📋 GENERATE WEEKLY SUMMARY";btn.disabled=false;return;
-  }
-  const total=weekExp.reduce((s,e)=>s+Number(e.amount),0);
-  const summary=weekExp.map(e=>`${e.name}: ${naira(e.amount)} (${e.category})`).join("\n");
-  try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({system:"You are a sharp Nigerian finance advisor. Be concise, specific, and direct.",
-        messages:[{role:"user",content:`Generate a brief weekly spending summary (max 5 bullet points) for these transactions from the past 7 days. Include total, top category, and one key observation.\n\n${summary}\n\nTotal: ${naira(total)}`}]})});
-    const data=await res.json();
-    const text=data.content?.[0]?.text||"Could not generate summary.";
-    document.getElementById("weeklySummaryContent").innerHTML=`
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">LAST 7 DAYS · ${weekExp.length} transactions · ${naira(total)}</div>
-      <div style="font-size:13px;line-height:1.8">${text}</div>`;
-  }catch{document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--muted)">Failed. Try again.</div>`;}
-  btn.innerHTML="📋 REGENERATE";btn.disabled=false;
-}
-
-// ── CATEGORY BUDGETS ──────────────────────
-let budgets=JSON.parse(localStorage.getItem("pb_budgets")||"{}");
-
-function handleBudgetClick(){if(!userPro){showPaywall();return;}openBudgetModal();}
-function openBudgetModal(){
-  const sel=document.getElementById("budgetCat");
-  sel.innerHTML=`<option value="">Choose category</option>`+CATS.map(c=>`<option value="${c}">${ICONS[c]} ${c}</option>`).join("");
-  document.getElementById("budgetModal").classList.remove("hidden");
-}
-function closeBudgetModal(){document.getElementById("budgetModal").classList.add("hidden");}
-function saveBudget(){
-  const cat=document.getElementById("budgetCat").value;
-  const amt=parseFloat(document.getElementById("budgetAmount").value)||0;
-  if(!cat){showToast("Choose a category","error");return;}
-  if(!amt){showToast("Enter an amount","error");return;}
-  budgets[cat]=amt;
-  localStorage.setItem("pb_budgets",JSON.stringify(budgets));
-  closeBudgetModal();renderBudgets();showToast(`${cat} budget set ✓`);
-}
-
-function renderBudgets(){
-  const el=document.getElementById("budgetsList");
-  const entries=Object.entries(budgets);
-  if(entries.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No budgets set yet</div>`;return;}
-  const now=new Date();
-  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split("T")[0];
-  el.innerHTML=entries.map(([cat,limit])=>{
-    const spent=expenses.filter(e=>e.category===cat&&e.date>=monthStart).reduce((s,e)=>s+Number(e.amount),0);
-    const pct=Math.min((spent/limit)*100,100);
-    const over=spent>limit;
-    return`<div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px">
-        <span>${ICONS[cat]} ${cat}</span>
-        <span style="color:${over?"var(--danger)":"var(--muted)"}">${naira(spent)} / ${naira(limit)}</span>
-      </div>
-      <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
-        <div style="height:100%;border-radius:3px;background:${over?"var(--danger)":COLORS[cat]};width:${pct}%;transition:width 0.8s ease"></div>
-      </div>
-      ${over?`<div style="font-size:10px;color:var(--danger);margin-top:3px">⚠️ Over budget by ${naira(spent-limit)}</div>`:""}
-    </div>`;
+function detectBills(){
+  const el=document.getElementById("billDetector");
+  if(expenses.length<3){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>Add more transactions to detect bills</div>";return;}
+  const nameCounts={};expenses.forEach(e=>{const k=e.name.toLowerCase().trim();nameCounts[k]=(nameCounts[k]||0)+1;});
+  const recurring=Object.entries(nameCounts).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
+  if(recurring.length===0){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>No recurring bills detected yet</div>";return;}
+  el.innerHTML=recurring.map(([name,count])=>{
+    const exps=expenses.filter(e=>e.name.toLowerCase().trim()===name);
+    const avg=exps.reduce((s,e)=>s+Number(e.amount),0)/exps.length;
+    return"<div class='list-item'><div><div class='li-name'>"+name+"</div><div class='li-sub'>"+count+"x detected</div></div><div style='text-align:right'><div style='font-weight:700;color:var(--danger);font-size:14px'>"+naira(avg)+"</div><div style='font-size:11px;color:var(--text2)'>avg</div></div></div>";
   }).join("");
 }
-
-// ── SAVINGS GOALS ─────────────────────────
-let goals=JSON.parse(localStorage.getItem("pb_goals")||"[]");
-
+function renderMerchantIntel(){
+  const el=document.getElementById("merchantIntel");
+  if(!userPro){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>Upgrade to Pro to see merchant insights</div>";return;}
+  if(expenses.length<2){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>Add more transactions to see merchant insights</div>";return;}
+  const merchants={};expenses.forEach(e=>{if(!merchants[e.name])merchants[e.name]={total:0,count:0};merchants[e.name].total+=Number(e.amount);merchants[e.name].count++;});
+  const top=Object.entries(merchants).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  el.innerHTML=top.map(([name,data])=>"<div class='list-item'><div><div class='li-name'>"+name+"</div><div class='li-sub'>"+data.count+" transaction"+(data.count>1?"s":"")+"</div></div><div style='text-align:right'><div style='font-weight:700;color:var(--danger);font-size:14px'>"+naira(data.total)+"</div><div style='font-size:11px;color:var(--text2)'>"+naira(Math.round(data.total/data.count))+" avg</div></div></div>").join("");
+}
+function saveBrokeAlert(){
+  const val=document.getElementById("brokeThreshold").value;
+  if(!val){showToast("Enter an amount","error");return;}
+  localStorage.setItem("pb_broke_threshold",val);
+  document.getElementById("brokeAlertMsg").textContent="✓ Alert set for below "+naira(val);showToast("Broke alert saved ✓");
+}
+function checkBrokeAlert(){
+  const threshold=parseFloat(localStorage.getItem("pb_broke_threshold")||"0");if(!threshold)return;
+  const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
+  const totalSpent=expenses.reduce((s,e)=>s+Number(e.amount),0);
+  if(totalBal-totalSpent<threshold)showToast("⚠️ Balance below your alert threshold!","error");
+}
+function handleBudgetClick(){if(!userPro){showPaywall();return;}openBudgetModal();}
+function openBudgetModal(){document.getElementById("budgetCat").innerHTML="<option value=''>Choose category</option>"+CATS.map(c=>"<option value='"+c+"'>"+ICONS[c]+" "+c+"</option>").join("");document.getElementById("budgetModal").classList.remove("hidden");}
+function closeBudgetModal(){document.getElementById("budgetModal").classList.add("hidden");}
+function saveBudget(){
+  const cat=document.getElementById("budgetCat").value;const amt=parseFloat(document.getElementById("budgetAmount").value)||0;
+  if(!cat||!amt){showToast("Fill in all fields","error");return;}
+  budgets[cat]=amt;localStorage.setItem("pb_budgets",JSON.stringify(budgets));closeBudgetModal();renderBudgets();showToast(cat+" budget set ✓");
+}
+function renderBudgets(){
+  const el=document.getElementById("budgetsList");const entries=Object.entries(budgets);
+  if(entries.length===0){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>No budgets set yet</div>";return;}
+  const monthStart=new Date(new Date().getFullYear(),new Date().getMonth(),1).toISOString().split("T")[0];
+  el.innerHTML=entries.map(([cat,limit])=>{
+    const spent=expenses.filter(e=>e.category===cat&&e.date>=monthStart).reduce((s,e)=>s+Number(e.amount),0);
+    const pct=Math.min((spent/limit)*100,100);const over=spent>limit;
+    return"<div class='budget-row'><div class='bud-head'><span>"+ICONS[cat]+" "+cat+"</span><span style='color:"+(over?"var(--danger)":"var(--text2)")+"'>"+naira(spent)+" / "+naira(limit)+"</span></div><div class='prog-track'><div class='prog-fill' style='background:"+(over?"var(--danger)":COLORS[cat])+";width:"+pct+"%'></div></div>"+(over?"<div style='font-size:11px;color:var(--danger);margin-top:3px;font-weight:600'>⚠️ Over by "+naira(spent-limit)+"</div>":"")+"</div>";
+  }).join("");
+}
 function handleGoalClick(){if(!userPro){showPaywall();return;}openGoalModal();}
 function openGoalModal(){document.getElementById("goalModal").classList.remove("hidden");}
 function closeGoalModal(){document.getElementById("goalModal").classList.add("hidden");}
 function saveGoal(){
-  const name=document.getElementById("goalName").value.trim();
-  const target=parseFloat(document.getElementById("goalTarget").value)||0;
-  const saved=parseFloat(document.getElementById("goalSaved").value)||0;
-  if(!name){showToast("Enter a goal name","error");return;}
-  if(!target){showToast("Enter a target amount","error");return;}
-  goals.push({id:Date.now(),name,target,saved});
-  localStorage.setItem("pb_goals",JSON.stringify(goals));
-  closeGoalModal();renderGoals();showToast("Goal added ✓");
+  const name=document.getElementById("goalName").value.trim();const target=parseFloat(document.getElementById("goalTarget").value)||0;const saved=parseFloat(document.getElementById("goalSaved").value)||0;
+  if(!name||!target){showToast("Fill in all fields","error");return;}
+  goals.push({id:Date.now(),name,target,saved});localStorage.setItem("pb_goals",JSON.stringify(goals));closeGoalModal();renderGoals();showToast("Goal added ✓");
 }
-
 function renderGoals(){
   const el=document.getElementById("goalsList");
-  if(goals.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No goals set yet</div>`;return;}
-  const monthlySpend=expenses.reduce((s,e)=>s+Number(e.amount),0);
-  const avgMonthlySavings=monthlySpend>0?monthlySpend*0.2:0;
+  if(goals.length===0){el.innerHTML="<div style='font-size:13px;color:var(--text2)'>No goals set yet</div>";return;}
   el.innerHTML=goals.map((g,i)=>{
     const pct=Math.min((g.saved/g.target)*100,100);
-    const remaining=g.target-g.saved;
-    const months=avgMonthlySavings>0?Math.ceil(remaining/avgMonthlySavings):null;
-    return`<div style="margin-bottom:16px;background:rgba(255,255,255,0.02);border-radius:12px;padding:14px;border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-family:var(--font-d);font-weight:700;font-size:14px">${g.name}</div>
-        <button onclick="deleteGoal(${i})" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font-m)">remove</button>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
-        <span style="color:var(--muted)">Saved: <strong style="color:var(--accent2)">${naira(g.saved)}</strong></span>
-        <span style="color:var(--muted)">Goal: <strong style="color:var(--text)">${naira(g.target)}</strong></span>
-      </div>
-      <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:6px">
-        <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:${pct}%;transition:width 0.8s ease"></div>
-      </div>
-      <div style="font-size:10px;color:var(--muted)">${pct.toFixed(0)}% complete${months?` · ~${months} months to go`:" · Start saving to see estimate"}</div>
-    </div>`;
+    return"<div class='goal-box'><div class='goal-head'><div class='goal-name'>"+g.name+"</div><button onclick='deleteGoal("+i+")' style='background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:inherit'>remove</button></div><div style='display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:8px'><span>Saved: <strong style='color:var(--accent2)'>"+naira(g.saved)+"</strong></span><span>Goal: <strong>"+naira(g.target)+"</strong></span></div><div class='prog-track' style='height:8px'><div class='prog-fill' style='background:linear-gradient(90deg,var(--accent),var(--accent2));width:"+pct+"%'></div></div><div style='font-size:11px;color:var(--text2);margin-top:5px;font-weight:500'>"+pct.toFixed(0)+"% complete · "+naira(Math.max(0,g.target-g.saved))+" remaining</div></div>";
   }).join("");
 }
+function deleteGoal(i){goals.splice(i,1);localStorage.setItem("pb_goals",JSON.stringify(goals));renderGoals();showToast("Goal removed");}
+function handleWeeklySummaryClick(){if(!userPro){showPaywall();return;}generateWeeklySummary();}
+async function generateWeeklySummary(){
+  const btn=document.getElementById("weeklyBtn");btn.innerHTML='<span class="spinner"></span>Generating...';btn.disabled=true;
+  const weekAgo=new Date(Date.now()-7*24*60*60*1000).toISOString().split("T")[0];
+  const weekExp=expenses.filter(e=>e.date>=weekAgo);
+  if(weekExp.length===0){document.getElementById("weeklySummaryContent").innerHTML="<div style='font-size:13px;color:var(--text2)'>No transactions in the last 7 days</div>";btn.innerHTML="📋 Generate Weekly Summary";btn.disabled=false;return;}
+  const total=weekExp.reduce((s,e)=>s+Number(e.amount),0);
+  const summary=weekExp.map(e=>e.name+": "+naira(e.amount)+" ("+e.category+")").join("
+");
+  try{
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"You are a sharp Nigerian finance advisor. Be concise and specific.",messages:[{role:"user",content:"Generate a brief weekly spending summary (5 bullet points max) for these past 7 days. Include total, top category, key observation, and one actionable tip.
 
-function deleteGoal(i){
-  goals.splice(i,1);
-  localStorage.setItem("pb_goals",JSON.stringify(goals));
-  renderGoals();showToast("Goal removed");
+"+summary+"
+
+Total: "+naira(total)}]})});
+    const data=await res.json();
+    const text=data.content?.[0]?.text||"Could not generate.";
+    document.getElementById("weeklySummaryContent").innerHTML="<div class='weekly-meta'>Last 7 days · "+weekExp.length+" transactions · "+naira(total)+"</div><div class='weekly-text'>"+text+"</div>";
+  }catch{document.getElementById("weeklySummaryContent").innerHTML="<div style='font-size:13px;color:var(--text2)'>Failed. Try again.</div>";}
+  btn.innerHTML="📋 Regenerate";btn.disabled=false;
 }
+function handleInsightClick(){if(!userPro){showPaywall();return;}getInsight();}
+async function getInsight(){
+  const btn=document.getElementById("insightBtn");btn.innerHTML='<span class="spinner"></span>Analyzing...';btn.disabled=true;
+  document.getElementById("aiContent").innerHTML="<div class='ai-ph' style='animation:pulse 1.5s infinite'>Reading your transactions...</div>";
+  const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
+  const summary=expenses.map(e=>e.name+": "+naira(e.amount)+" ("+e.category+") on "+e.date).join("
+");
+  try{
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"You are a sharp, direct Nigerian personal finance advisor. Be specific, use actual data.",messages:[{role:"user",content:"Analyze these bank transactions. Give 3 punchy sentences of honest advice with actual merchant names. End with ONE specific action this week.
 
-// ── START ─────────────────────────────────
+Transactions:
+"+summary+"
+Total: "+naira(total)}]})});
+    const data=await res.json();
+    document.getElementById("aiContent").innerHTML="<div class='ai-text'>"+(data.content?.[0]?.text||"Could not load.")+"</div>";
+  }catch{document.getElementById("aiContent").innerHTML="<div style='font-size:13px;color:var(--text2)'>Failed. Check connection.</div>";}
+  btn.innerHTML="🤖 Analyze My Spending";btn.disabled=false;
+}
+function showPaywall(){document.getElementById("paywallOverlay").classList.remove("hidden");}
+function hidePaywall(){document.getElementById("paywallOverlay").classList.add("hidden");}
+function initPaystack(){
+  const handler=PaystackPop.setup({key:PAYSTACK_PK,email:currentUser.email,amount:PLAN_KOBO,currency:"NGN",ref:"pb_"+Date.now(),
+    onSuccess:async(tx)=>{await verifyPayment(tx.reference);},
+    onCancel:()=>showToast("Payment cancelled","error"),
+  });handler.openIframe();
+}
+async function verifyPayment(ref){
+  try{
+    const res=await fetch("/api/verify-payment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reference:ref})});
+    const data=await res.json();
+    if(data.success){await sb.auth.updateUser({data:{is_pro:true}});userPro=true;hidePaywall();showToast("Welcome to Pro! 🎉");updateProfileUI();}
+    else showToast("Payment failed","error");
+  }catch{showToast("Verification error","error");}
+}
+function showProfile(){
+  const meta=currentUser?.user_metadata||{};
+  document.getElementById("profileName").textContent=meta.full_name||currentUser?.email?.split("@")[0]||"User";
+  document.getElementById("profileEmail").textContent=currentUser?.email||"";
+  updateProfileUI();document.getElementById("profileOverlay").classList.remove("hidden");
+}
+function hideProfile(){document.getElementById("profileOverlay").classList.add("hidden");}
+function updateProfileUI(){
+  document.getElementById("profilePlanBadge").innerHTML=userPro
+    ?"<span style='font-size:13px;padding:5px 14px;border-radius:20px;background:linear-gradient(135deg,var(--accent),#7C3AED);color:#fff;font-weight:700'>✦ PRO MEMBER</span>"
+    :"<span style='font-size:13px;padding:5px 14px;border-radius:20px;background:var(--bg);color:var(--text2);border:1px solid var(--border);font-weight:600'>FREE PLAN · <span onclick="hideProfile();showPaywall()" style='color:var(--accent);cursor:pointer'>Upgrade →</span></span>";
+}
 init();
 </script>
 </body>
