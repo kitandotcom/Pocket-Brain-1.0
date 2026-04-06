@@ -857,14 +857,9 @@ async function generateWeeklySummary(){
   const weekExp=expenses.filter(e=>e.date>=weekAgo);
   if(weekExp.length===0){document.getElementById("weeklySummaryContent").innerHTML="<div style='font-size:13px;color:var(--text2)'>No transactions in the last 7 days</div>";btn.innerHTML="📋 Generate Weekly Summary";btn.disabled=false;return;}
   const total=weekExp.reduce((s,e)=>s+Number(e.amount),0);
-  const summary=weekExp.map(e=>e.name+": "+naira(e.amount)+" ("+e.category+")").join("
-");
+  const summary=weekExp.map(e=>e.name+": "+naira(e.amount)+" ("+e.category+")").join("\n");
   try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"You are a sharp Nigerian finance advisor. Be concise and specific.",messages:[{role:"user",content:"Generate a brief weekly spending summary (5 bullet points max) for these past 7 days. Include total, top category, key observation, and one actionable tip.
-
-"+summary+"
-
-Total: "+naira(total)}]})});
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"You are a sharp Nigerian finance advisor. Be concise and specific.",messages:[{role:"user",content:"Generate a brief weekly spending summary (5 bullet points max) for these past 7 days. Include total, top category, key observation, and one actionable tip.\n\n"+summary+"\n\nTotal: "+naira(total)}]})});
     const data=await res.json();
     const text=data.content?.[0]?.text||"Could not generate.";
     document.getElementById("weeklySummaryContent").innerHTML="<div class='weekly-meta'>Last 7 days · "+weekExp.length+" transactions · "+naira(total)+"</div><div class='weekly-text'>"+text+"</div>";
@@ -876,14 +871,9 @@ async function getInsight(){
   const btn=document.getElementById("insightBtn");btn.innerHTML='<span class="spinner"></span>Analyzing...';btn.disabled=true;
   document.getElementById("aiContent").innerHTML="<div class='ai-ph' style='animation:pulse 1.5s infinite'>Reading your transactions...</div>";
   const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
-  const summary=expenses.map(e=>e.name+": "+naira(e.amount)+" ("+e.category+") on "+e.date).join("
-");
+  const summary=expenses.map(e=>e.name+": "+naira(e.amount)+" ("+e.category+") on "+e.date).join("\n");
   try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"You are a sharp, direct Nigerian personal finance advisor. Be specific, use actual data.",messages:[{role:"user",content:"Analyze these bank transactions. Give 3 punchy sentences of honest advice with actual merchant names. End with ONE specific action this week.
-
-Transactions:
-"+summary+"
-Total: "+naira(total)}]})});
+    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"You are a sharp, direct Nigerian personal finance advisor. Be specific, use actual data.",messages:[{role:"user",content:"Analyze these bank transactions. Give 3 punchy sentences of honest advice with actual merchant names. End with ONE specific action this week.\n\nTransactions:\n"+summary+"\nTotal: "+naira(total)}]})});
     const data=await res.json();
     document.getElementById("aiContent").innerHTML="<div class='ai-text'>"+(data.content?.[0]?.text||"Could not load.")+"</div>";
   }catch{document.getElementById("aiContent").innerHTML="<div style='font-size:13px;color:var(--text2)'>Failed. Check connection.</div>";}
@@ -915,7 +905,7 @@ function hideProfile(){document.getElementById("profileOverlay").classList.add("
 function updateProfileUI(){
   document.getElementById("profilePlanBadge").innerHTML=userPro
     ?"<span style='font-size:13px;padding:5px 14px;border-radius:20px;background:linear-gradient(135deg,var(--accent),#7C3AED);color:#fff;font-weight:700'>✦ PRO MEMBER</span>"
-    :"<span style='font-size:13px;padding:5px 14px;border-radius:20px;background:var(--bg);color:var(--text2);border:1px solid var(--border);font-weight:600'>FREE PLAN · <span onclick="hideProfile();showPaywall()" style='color:var(--accent);cursor:pointer'>Upgrade →</span></span>";
+    :"<span style='font-size:13px;padding:5px 14px;border-radius:20px;background:var(--bg);color:var(--text2);border:1px solid var(--border);font-weight:600'>FREE PLAN · <span onclick='hideProfile();showPaywall()' style='color:var(--accent);cursor:pointer'>Upgrade →</span></span>";
 }
 init();
 </script>
