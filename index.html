@@ -262,7 +262,7 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
         <div style="display:flex;gap:8px;align-items:center">
           <div style="flex:1">
             <div class="field-label" style="font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px">ALERT WHEN BALANCE BELOW</div>
-            <input type="number" id="brokeThreshold" placeholder="e.g. 5000" value="${localStorage.getItem('pb_broke_threshold')||''}"
+            <input type="number" id="brokeThreshold" placeholder="e.g. 5000" id="brokeThreshold"
               style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font-m);font-size:13px;outline:none"/>
           </div>
           <button onclick="saveBrokeAlert()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-family:var(--font-m);font-size:11px;cursor:pointer;font-weight:600;margin-top:18px">SAVE</button>
