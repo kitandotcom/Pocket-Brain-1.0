@@ -1,369 +1,464 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#080C14"/>
+<meta name="theme-color" content="#2563EB"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Pocket Brain"/>
 <link rel="manifest" href="/manifest.json"/>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236366F1'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
 <title>Pocket Brain</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-:root{--bg:#080C14;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.07);--accent:#6366F1;--accent2:#10B981;--danger:#FF6B35;--text:#E8F0FE;--muted:rgba(232,240,254,0.4);--font-d:'Syne',sans-serif;--font-m:'JetBrains Mono',monospace}
+/* ── THEMES ── */
+[data-theme="light"]{
+  --bg:#F0F4FF;--surface:#FFFFFF;--border:#E2E8F7;--border2:#CBD5E8;
+  --accent:#2563EB;--accent-light:#EEF2FF;--accent-dark:#1D4ED8;
+  --green:#059669;--green-light:#ECFDF5;
+  --red:#DC2626;--red-light:#FEF2F2;
+  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 12px rgba(37,99,235,0.08);
+  --shadow-lg:0 4px 20px rgba(37,99,235,0.15),0 1px 4px rgba(0,0,0,0.05);
+}
+[data-theme="dark"]{
+  --bg:#0B1120;--surface:#1E293B;--border:#1e3a5f;--border2:#1e3a5f;
+  --accent:#3B82F6;--accent-light:rgba(59,130,246,0.12);--accent-dark:#2563EB;
+  --green:#10B981;--green-light:rgba(16,185,129,0.12);
+  --red:#EF4444;--red-light:rgba(239,68,68,0.12);
+  --text:#F1F5F9;--text2:#94A3B8;--text3:#475569;
+  --shadow:0 1px 3px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.2);
+  --shadow-lg:0 4px 20px rgba(0,0,0,0.4);
+}
+/* ── BASE ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg);font-family:var(--font-m);color:var(--text)}
+body{background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);transition:background .3s,color .3s}
 ::-webkit-scrollbar{display:none}
-.glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 20% 10%,rgba(99,102,241,0.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 90%,rgba(16,185,129,0.1) 0%,transparent 50%)}
-.screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;overflow:hidden}
-.screen.hidden{display:none}
-/* AUTH */
-#authScreen{background:var(--bg);align-items:center;justify-content:center;padding:32px 24px}
-.auth-logo{font-family:var(--font-d);font-size:44px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.auth-tagline{font-size:11px;color:var(--muted);margin-bottom:40px;letter-spacing:3px}
-.auth-card{width:100%;max-width:360px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:24px;padding:24px}
-.auth-tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:12px;padding:3px;margin-bottom:20px}
-.auth-tab{flex:1;padding:8px;font-family:var(--font-m);font-size:11px;font-weight:600;border:none;background:transparent;color:var(--muted);border-radius:10px;cursor:pointer;letter-spacing:1px;transition:all .2s}
-.auth-tab.active{background:var(--accent);color:#fff}
-.field{margin-bottom:14px}
-.field-label{font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
-.field input{width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none;transition:border .2s}
-.field input:focus{border-color:var(--accent)}
-.field input::placeholder{color:rgba(255,255,255,0.2)}
-.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:var(--font-m);font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s}
-.btn-accent{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,0.3)}
-.btn-accent:active{transform:scale(0.98)}
-.btn-accent:disabled{opacity:0.4;cursor:not-allowed;transform:none}
-.btn-green{background:linear-gradient(135deg,#10B981,#059669);color:#fff}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
-.auth-msg{font-size:12px;margin-top:10px;text-align:center;min-height:18px}
-/* APP */
-#appScreen{background:var(--bg)}
-.app-scroll{flex:1;overflow-y:auto;padding:0 16px 100px;padding-top:max(env(safe-area-inset-top,24px),24px)}
-.app-header{padding:16px 0 0;margin-bottom:18px}
-.app-header-row{display:flex;justify-content:space-between;align-items:center}
-.app-logo{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:4px;color:var(--accent);text-transform:uppercase;margin-bottom:2px}
-.app-title{font-family:var(--font-d);font-size:22px;font-weight:800}
-.user-btn{width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
-.balance-hero{background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(16,185,129,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:20px;padding:20px;margin-bottom:14px}
-.bh-label{font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:5px}
-.bh-val{font-family:var(--font-d);font-size:34px;font-weight:800;color:var(--accent2)}
-.bh-sub{font-size:11px;color:var(--muted);margin-top:4px}
-.stats-row{display:flex;gap:8px;margin-bottom:14px}
-.stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px}
-.stat-label{font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:3px;text-transform:uppercase}
-.stat-val{font-family:var(--font-d);font-size:15px;font-weight:700}
-.tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:14px;padding:4px;margin-bottom:18px;gap:2px}
-.tab{flex:1;padding:8px 2px;font-family:var(--font-m);font-size:9px;background:transparent;color:var(--muted);border:none;border-radius:10px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:.5px}
-.tab.active{background:var(--accent);color:#fff;font-weight:600}
-.tab-icon{font-size:14px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px}
-.card-label{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
-/* BANKS */
-.bank-card{border-radius:18px;padding:18px;margin-bottom:12px}
-.bank-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.bank-logo-row{display:flex;align-items:center;gap:10px}
-.bank-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.bank-name{font-family:var(--font-d);font-weight:700;font-size:14px}
-.bank-acc{font-size:11px;color:var(--muted)}
-.linked-badge{font-size:9px;padding:4px 10px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--accent2);letter-spacing:1px;font-weight:600}
-.bank-nums{display:flex;justify-content:space-between;margin-bottom:10px}
-.num-label{font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:2px}
-.num-val{font-family:var(--font-d);font-size:19px;font-weight:700}
-.bar-track{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
-.bar-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
-.bar-note{font-size:10px;color:var(--muted);margin-top:5px}
-.add-bank-btn{width:100%;padding:14px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:16px;color:var(--accent);font-family:var(--font-m);font-size:12px;cursor:pointer;letter-spacing:1px;transition:all .2s}
-/* IMPORT */
-.sample-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.chip{padding:5px 11px;font-size:10px;border-radius:8px;font-family:var(--font-m);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:var(--accent);cursor:pointer}
-textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-family:var(--font-m);font-size:12px;outline:none;resize:none;line-height:1.6}
-textarea:focus{border-color:var(--accent)}
-textarea::placeholder{color:rgba(255,255,255,0.2)}
-.parsed-card{background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:16px;padding:18px;margin-bottom:12px}
-.parsed-ok{font-size:10px;letter-spacing:3px;color:var(--accent2);margin-bottom:12px}
-.parsed-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px}
-.parsed-key{color:var(--muted)}
-.parsed-val{font-weight:600}
-.cat-pills{display:flex;flex-wrap:wrap;gap:5px}
-.cat-pill{padding:5px 10px;border-radius:8px;font-size:11px;font-family:var(--font-m);cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s}
-/* TX */
-.tx{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px}
-.tx-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.tx-info{flex:1;min-width:0}
-.tx-name{font-family:var(--font-d);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tx-meta{display:flex;gap:6px;margin-top:3px;align-items:center}
-.tx-date{font-size:10px;color:var(--muted)}
-.tx-bank-tag{font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,0.05);color:var(--muted)}
-.tx-right{text-align:right;flex-shrink:0}
-.tx-amt{font-family:var(--font-d);font-weight:700;font-size:14px}
-.tx-edit{background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:10px;margin-top:2px;font-family:var(--font-m)}
-.cat-editor{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
-.cat-editor-label{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:8px}
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
-/* AI */
-.ai-box{background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:18px;margin-bottom:12px}
-.ai-label{font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:4px}
-.ai-sub{font-size:11px;color:var(--muted);margin-bottom:14px}
-.ai-text{font-size:13px;line-height:1.9}
-.ai-placeholder{text-align:center;color:var(--muted);padding:16px 0;font-size:13px}
-.breakdown-row{margin-bottom:14px}
-.br-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px}
-/* PAYWALL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:50;display:flex;align-items:flex-end;justify-content:center}
-.overlay.hidden{display:none}
-.sheet{background:#0F1623;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;border:1px solid rgba(99,102,241,0.2);animation:slideUp .35s cubic-bezier(.22,1,.36,1);max-height:90vh;overflow-y:auto}
-.sheet-title{font-family:var(--font-d);font-size:24px;font-weight:800;margin-bottom:8px}
-.paywall-feature{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px}
-.pro-badge{display:inline-block;font-size:8px;padding:2px 6px;border-radius:6px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-weight:700;letter-spacing:1px;margin-left:5px;vertical-align:middle}
-/* TOAST */
-.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:12px;font-size:11px;font-weight:600;z-index:200;letter-spacing:1px;white-space:nowrap;animation:toastIn .3s ease}
-.toast-success{background:var(--accent2);color:#fff}
-.toast-error{background:var(--danger);color:#fff}
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(60px + env(safe-area-inset-bottom,0px));background:rgba(8,12,20,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:all .2s;padding:8px}
-.nav-icon{font-size:19px}
-.nav-label{font-size:9px;color:var(--muted);letter-spacing:.5px;font-family:var(--font-m)}
-.nav-item.active .nav-label{color:var(--accent)}
-.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px rgba(99,102,241,0.6))}
-/* LOADING */
-.loading-screen{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.loading-logo{font-family:var(--font-d);font-size:52px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:pulse 1.5s infinite}
-.error-box{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.2);border-radius:12px;padding:14px;font-size:13px;margin-top:8px;color:#FF8B60}
-/* BANK MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:60;display:flex;align-items:flex-end;justify-content:center}
-.modal-overlay.hidden{display:none}
-.bank-option{width:100%;padding:13px 16px;margin-bottom:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;font-family:var(--font-m);cursor:pointer;text-align:left;transition:background .15s}
-/* ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
-@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 .hidden{display:none!important}
+/* ── AUTH ── */
+.auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:32px 24px}
+.auth-logo-box{width:72px;height:72px;background:var(--accent);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:16px;box-shadow:0 8px 24px rgba(37,99,235,0.35)}
+.auth-title{font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px;text-align:center}
+.auth-sub{font-size:14px;color:var(--text2);margin-bottom:32px;text-align:center}
+.auth-card{width:100%;max-width:380px;background:var(--surface);border-radius:24px;padding:28px;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
+.auth-seg{display:flex;background:var(--bg);border-radius:14px;padding:4px;margin-bottom:24px;gap:3px}
+.auth-seg-btn{flex:1;padding:10px;font-size:13px;font-weight:700;border:none;background:transparent;color:var(--text2);border-radius:11px;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.auth-seg-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,0.4)}
+.field{margin-bottom:18px}
+.field-label{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:7px;letter-spacing:.3px}
+.field input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-size:14px;outline:none;transition:border .15s}
+.field input:focus{border-color:var(--accent);background:var(--surface)}
+.field input::placeholder{color:var(--text3)}
+/* ── BUTTONS ── */
+.btn{width:100%;padding:15px;border:none;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-blue{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,0.35)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 4px 14px rgba(5,150,105,0.3)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--text2)}
+.btn-dashed{background:var(--accent-light);border:1.5px dashed var(--accent);color:var(--accent);border-radius:13px;padding:14px;width:100%;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;transition:all .2s}
+.auth-msg{font-size:13px;margin-top:12px;text-align:center;min-height:18px}
+.link-btn{background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;padding:0;font-family:inherit}
+/* ── TOP BAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;padding-top:max(env(safe-area-inset-top,14px),14px);box-shadow:var(--shadow)}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-icon{width:34px;height:34px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.topbar-name{font-size:18px;font-weight:800;color:var(--text)}
+.topbar-actions{display:flex;gap:8px}
+.icon-btn{width:38px;height:38px;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:all .15s}
+.icon-btn:active{transform:scale(.93)}
+/* ── SCROLL AREA ── */
+.app-scroll{flex:1;overflow-y:auto;padding-bottom:88px}
+/* ── PANES ── */
+.pane{display:none}
+.pane.active{display:block}
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--accent) 0%,#1D4ED8 100%);margin:16px;border-radius:22px;padding:26px 22px 22px;color:#fff;box-shadow:0 8px 28px rgba(37,99,235,0.35)}
+.hero-label{font-size:11px;font-weight:700;opacity:.8;letter-spacing:1.5px;margin-bottom:6px}
+.hero-amount{font-size:42px;font-weight:800;letter-spacing:-1.5px;margin-bottom:4px;line-height:1}
+.hero-sub{font-size:13px;opacity:.75;margin-bottom:20px}
+.hero-stats{display:flex;gap:10px}
+.hero-stat{flex:1;background:rgba(255,255,255,0.18);border-radius:14px;padding:12px;backdrop-filter:blur(8px)}
+.hero-stat-label{font-size:10px;font-weight:700;opacity:.8;letter-spacing:.5px;margin-bottom:3px}
+.hero-stat-val{font-size:19px;font-weight:800}
+/* ── SECTION ── */
+.sec{padding:0 20px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin:22px 0 12px}
+.sec-title{font-size:16px;font-weight:800;color:var(--text)}
+.sec-link{font-size:13px;font-weight:700;color:var(--accent);cursor:pointer;background:none;border:none;font-family:inherit}
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
+/* ── QUICK ACTIONS ── */
+.qa-grid{display:flex;gap:10px;margin-bottom:4px}
+.qa-btn{flex:1;padding:18px 8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;cursor:pointer;text-align:center;box-shadow:var(--shadow);transition:all .2s}
+.qa-btn:active{transform:scale(.96)}
+.qa-emoji{font-size:26px;margin-bottom:8px;display:block}
+.qa-label{font-size:12px;font-weight:700;color:var(--text);display:block}
+.qa-sub{font-size:11px;color:var(--text2);display:block;margin-top:2px}
+/* ── BANK CARDS ── */
+.bank-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.bank-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.bank-left{display:flex;align-items:center;gap:12px}
+.bank-logo{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.bank-name-txt{font-size:16px;font-weight:700;color:var(--text)}
+.bank-acc-txt{font-size:12px;color:var(--text2);margin-top:2px}
+.pill-green{font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;background:var(--green-light);color:var(--green);letter-spacing:.5px}
+.pill-red{font-size:10px;font-weight:600;padding:4px 10px;border-radius:8px;background:var(--red-light);color:var(--red);border:none;cursor:pointer;font-family:inherit}
+.bank-amounts{display:flex;justify-content:space-between;margin-bottom:12px}
+.amt-block{}
+.amt-label{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:3px}
+.amt-val{font-size:22px;font-weight:800;color:var(--text)}
+.prog-track{height:6px;background:var(--bg);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.prog-note{font-size:11px;color:var(--text3);margin-top:6px}
+.add-bank-btn{width:100%;padding:17px;background:var(--accent-light);border:1.5px dashed var(--accent);border-radius:17px;color:var(--accent);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:14px;letter-spacing:.3px;transition:all .2s}
+/* ── IMPORT ── */
+.import-textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:15px;color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;line-height:1.7;min-height:110px;transition:border .15s}
+.import-textarea:focus{border-color:var(--accent)}
+.import-textarea::placeholder{color:var(--text3)}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:7px 13px;font-size:11px;font-weight:700;border-radius:9px;background:var(--accent-light);border:1.5px solid var(--accent);color:var(--accent);cursor:pointer;font-family:inherit;transition:all .15s}
+.chip:active{transform:scale(.95)}
+.parsed-card{background:var(--green-light);border:1.5px solid var(--green);border-radius:18px;padding:20px;margin-bottom:14px}
+.parsed-ok{font-size:10px;font-weight:700;color:var(--green);letter-spacing:1.5px;margin-bottom:14px}
+.parsed-row{display:flex;justify-content:space-between;margin-bottom:11px;font-size:14px}
+.parsed-key{color:var(--text2);font-weight:500}
+.parsed-val{font-weight:700;color:var(--text)}
+.cat-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.cat-chip{padding:7px 12px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text2);transition:all .15s;font-family:inherit}
+.err-card{background:var(--red-light);border:1.5px solid var(--red);border-radius:14px;padding:15px;font-size:13px;color:var(--red);margin-top:10px}
+/* ── TRANSACTIONS ── */
+.tx-item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.tx-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.tx-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.tx-date{font-size:11px;color:var(--text3);font-weight:500}
+.tx-bank-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--text2);border:1px solid var(--border)}
+.tx-amt{font-size:16px;font-weight:800;flex-shrink:0}
+.tx-edit-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;font-family:inherit;font-weight:600;margin-top:4px;display:block}
+.cat-edit-box{background:var(--bg);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
+.cat-edit-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase}
+/* ── INSIGHT ── */
+.personality-card{background:linear-gradient(135deg,var(--accent),#7C3AED);border-radius:18px;padding:22px;color:#fff;text-align:center;margin-bottom:14px;box-shadow:0 8px 24px rgba(37,99,235,0.3)}
+.personality-name{font-size:24px;font-weight:800;margin-bottom:8px}
+.personality-msg{font-size:13px;opacity:.88;line-height:1.6}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:var(--shadow)}
+.pro-tag{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#7C3AED);color:#fff;letter-spacing:.5px;vertical-align:middle;margin-left:5px}
+.bdown-row{margin-bottom:16px}
+.bdown-head{display:flex;justify-content:space-between;margin-bottom:7px;font-size:13px;font-weight:700}
+.forecast-grid{display:flex;gap:10px;margin-bottom:14px}
+.f-block{flex:1;background:var(--bg);border-radius:14px;padding:16px;border:1px solid var(--border)}
+.f-label{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:4px;text-transform:uppercase}
+.f-val{font-size:20px;font-weight:800}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}
+.list-item:last-child{border-bottom:none}
+.li-name{font-size:13px;font-weight:700;color:var(--text);text-transform:capitalize}
+.li-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.goal-box{background:var(--bg);border-radius:14px;padding:18px;margin-bottom:12px;border:1px solid var(--border)}
+.goal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.goal-name-txt{font-size:15px;font-weight:700;color:var(--text)}
+.budget-row{margin-bottom:16px}
+.budget-head{display:flex;justify-content:space-between;margin-bottom:7px;font-size:13px;font-weight:700}
+.ai-box{background:var(--accent-light);border:1.5px solid var(--accent);border-radius:18px;padding:22px;margin-bottom:14px}
+.ai-label{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1.5px;margin-bottom:4px;text-transform:uppercase}
+.ai-sub-txt{font-size:12px;color:var(--text2);margin-bottom:14px}
+.ai-text{font-size:14px;line-height:1.9;color:var(--text)}
+.ai-placeholder{font-size:13px;color:var(--text3);text-align:center;padding:20px 0}
+.broke-row{display:flex;gap:10px;align-items:flex-end}
+.broke-input{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:13px 15px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border .15s}
+.broke-input:focus{border-color:var(--accent)}
+.small-btn{padding:13px 18px;background:var(--accent);border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.weekly-meta{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:10px;padding:9px 13px;background:var(--bg);border-radius:9px;border:1px solid var(--border)}
+.weekly-text{font-size:13px;line-height:1.9;color:var(--text)}
+.empty-state{text-align:center;padding:36px 16px}
+.empty-icon{font-size:44px;margin-bottom:14px}
+.empty-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px}
+.empty-desc{font-size:13px;color:var(--text2);line-height:1.6}
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);z-index:20;box-shadow:0 -4px 20px rgba(0,0,0,0.07)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;cursor:pointer;gap:4px;border:none;background:transparent;font-family:inherit;transition:all .15s}
+.nav-icon{font-size:21px}
+.nav-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.3px}
+.nav-btn.active .nav-label{color:var(--accent)}
+.nav-btn.active .nav-icon{filter:drop-shadow(0 0 6px rgba(37,99,235,0.5))}
+/* ── OVERLAYS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(5px)}
+.overlay.hidden{display:none!important}
+.sheet{background:var(--surface);border-radius:26px 26px 0 0;padding:30px 24px 44px;width:100%;max-width:480px;border-top:1px solid var(--border);animation:slideUp .3s cubic-bezier(.22,1,.36,1);max-height:92vh;overflow-y:auto}
+.sheet-tag{font-size:10px;font-weight:700;color:var(--accent);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
+.sheet-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px}
+.sheet-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:60;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(5px)}
+.modal-overlay.hidden{display:none!important}
+.bank-option{width:100%;padding:15px 18px;margin-bottom:9px;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;color:var(--text);font-size:14px;font-family:inherit;font-weight:600;cursor:pointer;text-align:left;transition:all .15s}
+.bank-option:hover{border-color:var(--accent);background:var(--accent-light)}
+/* ── PAYWALL ── */
+.pw-amount{font-size:48px;font-weight:800;color:var(--accent);text-align:center;margin:18px 0 4px}
+.pw-period{font-size:13px;color:var(--text2);text-align:center;margin-bottom:24px}
+.pw-feat{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.pw-check{color:var(--green);font-size:19px}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:14px;font-size:13px;font-weight:700;z-index:200;white-space:nowrap;animation:toastIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
+.toast-success{background:var(--green);color:#fff}
+.toast-error{background:var(--red);color:#fff}
+.toast-info{background:var(--accent);color:#fff}
+/* ── SPINNER ── */
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+/* ── INFO BOX ── */
+.info-box{background:var(--accent-light);border:1px solid var(--accent);border-radius:14px;padding:16px;margin-bottom:12px}
+.info-box-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:5px}
+.info-box-text{font-size:12px;color:var(--text2);line-height:1.6}
+/* ── SELECT ── */
+select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border .15s}
+select:focus{border-color:var(--accent)}
+/* ── ANIMATIONS ── */
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
-<div class="screen" id="authScreen" style="display:flex">
-  <div class="glow"></div>
-  <div class="auth-logo">Pocket Brain</div>
-  <div class="auth-tagline">YOUR MONEY. CLEAR.</div>
-  <div class="auth-card">
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="setAuthTab('login')" id="authTabLogin">LOGIN</button>
-      <button class="auth-tab" onclick="setAuthTab('signup')" id="authTabSignup">SIGN UP</button>
+<!-- FORGOT -->
+<div class="screen" id="forgotScreen" style="display:none">
+  <div class="auth-wrap">
+    <div class="auth-logo-box">🧠</div>
+    <div class="auth-title">Reset Password</div>
+    <div class="auth-sub">We'll send a link to your email</div>
+    <div class="auth-card">
+      <div class="field"><div class="field-label">Email Address</div><input type="email" id="resetEmail" placeholder="you@email.com"/></div>
+      <button class="btn btn-blue" id="resetBtn" onclick="sendReset()">Send Reset Link</button>
+      <div class="auth-msg" id="resetMsg"></div>
+      <div style="text-align:center;margin-top:16px"><button class="link-btn" onclick="showLogin()">← Back to login</button></div>
     </div>
-    <div class="field"><div class="field-label">Email</div><input type="email" id="authEmail" placeholder="you@email.com"/></div>
-    <div class="field"><div class="field-label">Password</div><input type="password" id="authPassword" placeholder="••••••••"/></div>
-    <div class="field hidden" id="authNameField"><div class="field-label">Full Name</div><input type="text" id="authName" placeholder="Your name"/></div>
-    <button class="btn btn-accent" id="authBtn" onclick="handleAuth()">LOGIN</button>
-    <div id="forgotLink" style="text-align:center;margin-top:12px">
-      <span onclick="showForgot()" style="font-size:11px;color:var(--accent);cursor:pointer;letter-spacing:1px">Forgot password?</span>
-    </div>
-    <div class="auth-msg" id="authMsg"></div>
   </div>
 </div>
 
-<!-- FORGOT PASSWORD SCREEN -->
-<div class="screen" id="forgotScreen" style="display:none">
-  <div class="glow"></div>
-  <div class="auth-logo">Pocket Brain</div>
-  <div class="auth-tagline">RESET YOUR PASSWORD</div>
-  <div class="auth-card">
-    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">Enter your email and we'll send you a link to reset your password.</div>
-    <div class="field"><div class="field-label">Email</div><input type="email" id="resetEmail" placeholder="you@email.com"/></div>
-    <button class="btn btn-accent" id="resetBtn" onclick="sendReset()">SEND RESET LINK</button>
-    <div class="auth-msg" id="resetMsg"></div>
-    <div style="text-align:center;margin-top:14px">
-      <span onclick="showLogin()" style="font-size:11px;color:var(--accent);cursor:pointer;letter-spacing:1px">← Back to login</span>
+<!-- AUTH -->
+<div class="screen" id="authScreen" style="display:flex">
+  <div class="auth-wrap">
+    <div class="auth-logo-box">🧠</div>
+    <div class="auth-title">Pocket Brain</div>
+    <div class="auth-sub">Your money. Clear.</div>
+    <div class="auth-card">
+      <div class="auth-seg">
+        <button class="auth-seg-btn active" onclick="setAuthTab('login')" id="authTabLogin">Login</button>
+        <button class="auth-seg-btn" onclick="setAuthTab('signup')" id="authTabSignup">Sign Up</button>
+      </div>
+      <div class="field"><div class="field-label">Email</div><input type="email" id="authEmail" placeholder="you@email.com"/></div>
+      <div class="field"><div class="field-label">Password</div><input type="password" id="authPassword" placeholder="Min. 6 characters"/></div>
+      <div class="field hidden" id="authNameField"><div class="field-label">Full Name</div><input type="text" id="authName" placeholder="Your name"/></div>
+      <button class="btn btn-blue" id="authBtn" onclick="handleAuth()">LOGIN</button>
+      <div id="forgotLinkWrap" style="text-align:center;margin-top:16px"><button class="link-btn" onclick="showForgot()">Forgot password?</button></div>
+      <div class="auth-msg" id="authMsg"></div>
     </div>
   </div>
 </div>
 
 <!-- APP -->
 <div class="screen" id="appScreen" style="display:none">
-  <div class="glow"></div>
-  <div class="app-scroll" id="appScroll">
-    <div class="app-header">
-      <div class="app-header-row">
-        <div><div class="app-logo">POCKET BRAIN</div><div class="app-title" id="greetingText">Good day 👋</div></div>
-        <div class="user-btn" onclick="showProfile()">👤</div>
-      </div>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-icon">🧠</div>
+      <div class="topbar-name">Pocket Brain</div>
     </div>
-    <div class="balance-hero">
-      <div class="bh-label">NET BALANCE</div>
-      <div class="bh-val" id="heroBalance">₦0</div>
-      <div class="bh-sub" id="heroSub">0 transactions tracked</div>
-    </div>
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">SPENT</div><div class="stat-val" style="color:var(--danger)" id="statSpent">₦0</div></div>
-      <div class="stat-card"><div class="stat-label">ENTRIES</div><div class="stat-val" style="color:var(--accent)" id="statCount">0</div></div>
-      <div class="stat-card"><div class="stat-label">TOP CAT</div><div class="stat-val" id="statTop" style="font-size:12px">—</div></div>
-    </div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('accounts')" id="tab-accounts"><span class="tab-icon">🏦</span><span>ACCOUNTS</span></button>
-      <button class="tab" onclick="switchTab('import')" id="tab-import"><span class="tab-icon">📩</span><span>IMPORT</span></button>
-      <button class="tab" onclick="switchTab('transactions')" id="tab-transactions"><span class="tab-icon">📋</span><span>HISTORY</span></button>
-      <button class="tab" onclick="switchTab('insight')" id="tab-insight"><span class="tab-icon">🤖</span><span>AI<span class="pro-badge">PRO</span></span></button>
-    </div>
-    <!-- ACCOUNTS -->
-    <div id="pane-accounts"><div id="bankCards"></div><button class="add-bank-btn" onclick="openBankModal()">+ LINK ANOTHER BANK</button></div>
-    <!-- IMPORT -->
-    <div id="pane-import" class="hidden">
-      <div class="card">
-        <div class="card-label">Paste Bank Alert</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Copy a debit SMS or email from your bank and paste below. AI extracts the details automatically.</div>
-        <textarea id="alertInput" rows="5" placeholder="e.g. Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC..."></textarea>
-        <div style="font-size:10px;color:var(--muted);margin:10px 0 8px;letter-spacing:1px">TRY A SAMPLE:</div>
-        <div class="sample-chips">
-          <button class="chip" onclick="setSample(0)">🍔 Food</button>
-          <button class="chip" onclick="setSample(1)">🚗 Transport</button>
-          <button class="chip" onclick="setSample(2)">↔️ Transfer</button>
-          <button class="chip" onclick="setSample(3)">🎬 Entertainment</button>
-          <button class="chip" onclick="setSample(4)">⛽ Fuel</button>
-        </div>
-        <button class="btn btn-accent" id="parseBtn" onclick="parseAlert()" style="margin-top:4px">🤖 PARSE ALERT</button>
-      </div>
-      <div id="parsedCard" class="hidden parsed-card">
-        <div class="parsed-ok">✓ PARSED SUCCESSFULLY</div>
-        <div class="parsed-row"><span class="parsed-key">Merchant</span><span class="parsed-val" id="pName">—</span></div>
-        <div class="parsed-row"><span class="parsed-key">Amount</span><span class="parsed-val" id="pAmt">—</span></div>
-        <div class="parsed-row"><span class="parsed-key">Date</span><span class="parsed-val" id="pDate">—</span></div>
-        <div class="parsed-row"><span class="parsed-key">Bank</span><span class="parsed-val" id="pBank">—</span></div>
-        <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin:12px 0 8px">CATEGORY</div>
-        <div class="cat-pills" id="parsedCats"></div>
-        <div style="margin-top:16px"><button class="btn btn-green" onclick="confirmParsed()">ADD TO HISTORY ✓</button></div>
-      </div>
-      <div id="parseError" class="hidden error-box">⚠️ Couldn't parse that alert. Try pasting the full raw SMS text.</div>
-    </div>
-    <!-- TRANSACTIONS -->
-    <div id="pane-transactions" class="hidden"><div id="txList"></div></div>
-    <!-- INSIGHT -->
-    <div id="pane-insight" class="hidden">
-
-      <!-- Spending Personality Card -->
-      <div class="card" id="personalityCard">
-        <div class="card-label">YOUR SPENDING PERSONALITY</div>
-        <div id="personalityContent"><div class="ai-placeholder" style="padding:12px 0">Tap analyze to reveal your personality</div></div>
-      </div>
-
-      <!-- Broke Alert -->
-      <div class="card">
-        <div class="card-label">💸 BROKE ALERT</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Get notified inside the app when balance drops below your threshold</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="flex:1">
-            <div class="field-label" style="font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:4px">ALERT WHEN BALANCE BELOW</div>
-            <input type="number" id="brokeThreshold" placeholder="e.g. 5000" id="brokeThreshold"
-              style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--font-m);font-size:13px;outline:none"/>
-          </div>
-          <button onclick="saveBrokeAlert()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-family:var(--font-m);font-size:11px;cursor:pointer;font-weight:600;margin-top:18px">SAVE</button>
-        </div>
-        <div id="brokeAlertMsg" style="font-size:11px;margin-top:8px;color:var(--accent2)"></div>
-      </div>
-
-      <!-- Bill Detector -->
-      <div class="card">
-        <div class="card-label">🔁 RECURRING BILLS DETECTED</div>
-        <div id="billDetector"><div style="font-size:12px;color:var(--muted)">Add transactions to detect recurring bills</div></div>
-      </div>
-
-      <!-- Category Budgets -->
-      <div class="card">
-        <div class="card-label">🎯 CATEGORY BUDGETS <span class="pro-badge">PRO</span></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Set monthly spending limits per category</div>
-        <div id="budgetsList"></div>
-        <button onclick="handleBudgetClick()" style="width:100%;padding:11px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:12px;color:var(--accent);font-family:var(--font-m);font-size:11px;cursor:pointer;letter-spacing:1px;margin-top:8px">+ SET BUDGET</button>
-      </div>
-
-      <!-- Savings Goals -->
-      <div class="card">
-        <div class="card-label">🎯 SAVINGS GOALS <span class="pro-badge">PRO</span></div>
-        <div id="goalsList"><div style="font-size:12px;color:var(--muted)">No goals set yet</div></div>
-        <button onclick="handleGoalClick()" style="width:100%;padding:11px;background:transparent;border:1px dashed rgba(99,102,241,0.35);border-radius:12px;color:var(--accent);font-family:var(--font-m);font-size:11px;cursor:pointer;letter-spacing:1px;margin-top:8px">+ ADD GOAL</button>
-      </div>
-
-      <!-- Spending Forecast -->
-      <div class="card">
-        <div class="card-label">📈 SPENDING FORECAST <span class="pro-badge">PRO</span></div>
-        <div id="forecastContent"><div style="font-size:12px;color:var(--muted)">Add more transactions to see forecast</div></div>
-      </div>
-
-      <!-- Weekly Summary -->
-      <div class="card">
-        <div class="card-label">📋 WEEKLY SUMMARY <span class="pro-badge">PRO</span></div>
-        <div id="weeklySummaryContent"><div class="ai-placeholder" style="padding:8px 0">Tap to generate this week's summary</div></div>
-        <button onclick="handleWeeklySummaryClick()" class="btn btn-accent" id="weeklyBtn" style="margin-top:12px">📋 GENERATE WEEKLY SUMMARY</button>
-      </div>
-
-      <!-- Merchant Intelligence -->
-      <div class="card">
-        <div class="card-label">🏪 MERCHANT INTEL <span class="pro-badge">PRO</span></div>
-        <div id="merchantIntel"><div style="font-size:12px;color:var(--muted)">Add transactions to see merchant insights</div></div>
-      </div>
-
-      <!-- Breakdown -->
-      <div class="card"><div class="card-label">Spending Breakdown</div><div id="breakdown"></div></div>
-
-      <!-- AI Advisor -->
-      <div class="ai-box">
-        <div class="ai-label">AI FINANCE ADVISOR <span class="pro-badge">PRO</span></div>
-        <div class="ai-sub">Personalized advice from your actual transactions</div>
-        <div id="aiContent"><div class="ai-placeholder">Tap below to get your analysis</div></div>
-      </div>
-      <button class="btn btn-accent" id="insightBtn" onclick="handleInsightClick()">🤖 ANALYZE MY SPENDING</button>
+    <div class="topbar-actions">
+      <div class="icon-btn" id="themeBtn" onclick="toggleTheme()">🌙</div>
+      <div class="icon-btn" onclick="showProfile()">👤</div>
     </div>
   </div>
+
+  <div class="app-scroll" id="appScroll">
+
+    <!-- DASHBOARD -->
+    <div class="pane active" id="pane-dashboard">
+      <div class="hero">
+        <div class="hero-label">NET BALANCE</div>
+        <div class="hero-amount" id="heroBalance">₦0</div>
+        <div class="hero-sub" id="heroSub">No transactions yet</div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="hero-stat-label">SPENT</div><div class="hero-stat-val" id="heroSpent">₦0</div></div>
+          <div class="hero-stat"><div class="hero-stat-label">ENTRIES</div><div class="hero-stat-val" id="heroCount">0</div></div>
+          <div class="hero-stat"><div class="hero-stat-label">TOP</div><div class="hero-stat-val" id="heroTop">—</div></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-head"><div class="sec-title">Quick Actions</div></div>
+        <div class="qa-grid">
+          <button class="qa-btn" onclick="switchTab('import')"><span class="qa-emoji">📩</span><span class="qa-label">Import</span><span class="qa-sub">Paste SMS</span></button>
+          <button class="qa-btn" onclick="switchTab('accounts')"><span class="qa-emoji">🏦</span><span class="qa-label">Accounts</span><span class="qa-sub">Link bank</span></button>
+          <button class="qa-btn" onclick="switchTab('insight')"><span class="qa-emoji">🤖</span><span class="qa-label">AI</span><span class="qa-sub">Pro features</span></button>
+        </div>
+        <div class="sec-head"><div class="sec-title">Recent Transactions</div><button class="sec-link" onclick="switchTab('history')">See all →</button></div>
+        <div id="recentTx"></div>
+        <div id="dashPersonality" style="margin-bottom:24px"></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS -->
+    <div class="pane" id="pane-accounts">
+      <div class="sec" style="padding-top:20px">
+        <div class="sec-head"><div class="sec-title">Linked Accounts</div></div>
+        <div id="bankCards"></div>
+        <button class="add-bank-btn" onclick="openBankModal()">+ Link Bank Account</button>
+        <div class="info-box">
+          <div class="info-box-title">💡 How bank linking works</div>
+          <div class="info-box-text">Add your bank account manually, then paste debit SMS alerts in the Import tab — AI reads and categorizes them instantly.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="pane" id="pane-import">
+      <div class="sec" style="padding-top:20px">
+        <div class="sec-head"><div class="sec-title">Import Bank Alert</div></div>
+        <div class="card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">Paste any debit SMS or email from your bank. AI reads and categorizes it instantly.</div>
+          <textarea class="import-textarea" id="alertInput" rows="5" placeholder="e.g. Debit Alert: Your GTBank account was debited N3,500.00 on 03-Apr-2026 at CHICKEN REPUBLIC..."></textarea>
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin:14px 0 9px;letter-spacing:.5px">TRY A SAMPLE:</div>
+          <div class="chip-row">
+            <button class="chip" onclick="setSample(0)">🍔 Food</button>
+            <button class="chip" onclick="setSample(1)">🚗 Transport</button>
+            <button class="chip" onclick="setSample(2)">↔️ Transfer</button>
+            <button class="chip" onclick="setSample(3)">🎬 Entertainment</button>
+            <button class="chip" onclick="setSample(4)">⛽ Fuel</button>
+          </div>
+          <button class="btn btn-blue" id="parseBtn" onclick="parseAlert()">🤖 Parse Alert</button>
+        </div>
+        <div id="parsedCard" class="hidden parsed-card">
+          <div class="parsed-ok">✓ PARSED SUCCESSFULLY</div>
+          <div class="parsed-row"><span class="parsed-key">Merchant</span><span class="parsed-val" id="pName">—</span></div>
+          <div class="parsed-row"><span class="parsed-key">Amount</span><span class="parsed-val" id="pAmt">—</span></div>
+          <div class="parsed-row"><span class="parsed-key">Date</span><span class="parsed-val" id="pDate">—</span></div>
+          <div class="parsed-row"><span class="parsed-key">Bank</span><span class="parsed-val" id="pBank">—</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin:16px 0 9px;text-transform:uppercase">Category</div>
+          <div class="cat-grid" id="parsedCats"></div>
+          <div style="margin-top:18px"><button class="btn btn-green" onclick="confirmParsed()">Add to History ✓</button></div>
+        </div>
+        <div id="parseError" class="hidden err-card">⚠️ Couldn't parse that alert. Try pasting the full raw SMS text.</div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="pane" id="pane-history">
+      <div class="sec" style="padding-top:20px">
+        <div class="sec-head"><div class="sec-title">Transaction History</div><div id="historyCount" style="font-size:13px;color:var(--text2);font-weight:600"></div></div>
+        <div id="txList"></div>
+      </div>
+    </div>
+
+    <!-- INSIGHT -->
+    <div class="pane" id="pane-insight">
+      <div class="sec" style="padding-top:20px">
+
+        <div class="sec-head"><div class="sec-title">🧠 Spending Personality</div></div>
+        <div id="personalityCard" style="margin-bottom:6px"></div>
+
+        <div class="sec-head"><div class="sec-title">📊 Breakdown</div></div>
+        <div class="feat-card"><div id="breakdown"><div style="font-size:13px;color:var(--text2)">No transactions yet</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">📈 Spending Forecast <span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card"><div id="forecastContent"><div style="font-size:13px;color:var(--text2)">Add transactions to see forecast</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">🔁 Recurring Bills</div></div>
+        <div class="feat-card"><div id="billDetector"><div style="font-size:13px;color:var(--text2)">Add more transactions to detect bills</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">🏪 Top Merchants <span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card"><div id="merchantIntel"><div style="font-size:13px;color:var(--text2)">Add transactions to see merchant insights</div></div></div>
+
+        <div class="sec-head"><div class="sec-title">💸 Broke Alert</div></div>
+        <div class="feat-card">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Get alerted inside the app when your balance drops below a threshold.</div>
+          <div class="broke-row">
+            <input type="number" id="brokeThreshold" class="broke-input" placeholder="Alert below e.g. ₦5,000"/>
+            <button class="small-btn" onclick="saveBrokeAlert()">SAVE</button>
+          </div>
+          <div id="brokeAlertMsg" style="font-size:12px;color:var(--green);margin-top:10px;font-weight:600"></div>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">🎯 Category Budgets <span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card">
+          <div id="budgetsList"><div style="font-size:13px;color:var(--text2)">No budgets set yet</div></div>
+          <button class="btn-dashed" onclick="handleBudgetClick()">+ Set Budget Limit</button>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">💰 Savings Goals <span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card">
+          <div id="goalsList"><div style="font-size:13px;color:var(--text2)">No goals set yet</div></div>
+          <button class="btn-dashed" onclick="handleGoalClick()">+ Add Savings Goal</button>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">📋 Weekly Summary <span class="pro-tag">PRO</span></div></div>
+        <div class="feat-card">
+          <div id="weeklySummaryContent"><div style="font-size:13px;color:var(--text2)">Tap below to generate this week's summary</div></div>
+          <button class="btn btn-blue" id="weeklyBtn" onclick="handleWeeklySummaryClick()" style="margin-top:16px">📋 Generate Weekly Summary</button>
+        </div>
+
+        <div class="sec-head"><div class="sec-title">🤖 AI Finance Advisor <span class="pro-tag">PRO</span></div></div>
+        <div class="ai-box">
+          <div class="ai-label">Personalized Advice</div>
+          <div class="ai-sub-txt">Based on your actual transactions</div>
+          <div id="aiContent"><div class="ai-placeholder">Tap below to get your analysis</div></div>
+        </div>
+        <button class="btn btn-blue" id="insightBtn" onclick="handleInsightClick()" style="margin-bottom:36px">🤖 Analyze My Spending</button>
+
+      </div>
+    </div>
+
+  </div><!-- end app-scroll -->
+
+  <!-- Bottom Nav -->
   <div class="bottom-nav">
-    <div class="nav-item active" onclick="switchTab('accounts')" id="nav-accounts"><span class="nav-icon">🏦</span><span class="nav-label">ACCOUNTS</span></div>
-    <div class="nav-item" onclick="switchTab('import')" id="nav-import"><span class="nav-icon">📩</span><span class="nav-label">IMPORT</span></div>
-    <div class="nav-item" onclick="switchTab('transactions')" id="nav-transactions"><span class="nav-icon">📋</span><span class="nav-label">HISTORY</span></div>
-    <div class="nav-item" onclick="switchTab('insight')" id="nav-insight"><span class="nav-icon">🤖</span><span class="nav-label">AI</span></div>
+    <button class="nav-btn active" onclick="switchTab('dashboard')" id="nav-dashboard"><span class="nav-icon">🏠</span><span class="nav-label">HOME</span></button>
+    <button class="nav-btn" onclick="switchTab('accounts')" id="nav-accounts"><span class="nav-icon">🏦</span><span class="nav-label">ACCOUNTS</span></button>
+    <button class="nav-btn" onclick="switchTab('import')" id="nav-import"><span class="nav-icon">📩</span><span class="nav-label">IMPORT</span></button>
+    <button class="nav-btn" onclick="switchTab('history')" id="nav-history"><span class="nav-icon">📋</span><span class="nav-label">HISTORY</span></button>
+    <button class="nav-btn" onclick="switchTab('insight')" id="nav-insight"><span class="nav-icon">🤖</span><span class="nav-label">AI</span></button>
   </div>
 </div>
 
 <!-- PAYWALL -->
 <div class="overlay hidden" id="paywallOverlay">
-  <div class="sheet">
-    <div style="font-size:36px;margin-bottom:12px">🧠</div>
-    <div class="sheet-title">Upgrade to Pro</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">Unlock AI-powered spending analysis and get personalized financial advice.</div>
-    <div style="margin-bottom:22px">
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>AI spending analysis & advice</span></div>
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>Smart bank alert parsing (unlimited)</span></div>
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>Full transaction history</span></div>
-      <div class="paywall-feature"><span style="color:var(--accent2)">✓</span><span>Monthly spending reports</span></div>
-    </div>
-    <div style="text-align:center;margin-bottom:22px">
-      <div style="font-family:var(--font-d);font-size:40px;font-weight:800;color:var(--accent)">₦1,800</div>
-      <div style="font-size:11px;color:var(--muted)">per month</div>
-    </div>
-    <button class="btn btn-accent" onclick="initPaystack()">PAY WITH PAYSTACK</button>
-    <button onclick="hidePaywall()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:10px">Maybe later</button>
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div style="text-align:center;font-size:44px;margin-bottom:12px">🧠</div>
+    <div class="sheet-title" style="text-align:center">Upgrade to Pro</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:22px;line-height:1.6">Unlock AI-powered insights and all premium features</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> AI spending analysis & advice</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Weekly AI summaries</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Spending forecast</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Category budgets & limits</div>
+    <div class="pw-feat"><span class="pw-check">✓</span> Savings goals tracker</div>
+    <div class="pw-feat" style="border:none"><span class="pw-check">✓</span> Top merchant intelligence</div>
+    <div class="pw-amount">₦1,800</div>
+    <div class="pw-period">per month · cancel anytime</div>
+    <button class="btn btn-blue" onclick="initPaystack()">Pay with Paystack</button>
+    <button onclick="hidePaywall()" style="width:100%;padding:13px;background:transparent;border:none;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px">Maybe later</button>
   </div>
 </div>
 
 <!-- PROFILE -->
 <div class="overlay hidden" id="profileOverlay" onclick="hideProfile()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <div style="font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:14px">YOUR ACCOUNT</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:3px" id="profileName">—</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:8px" id="profileEmail">—</div>
+    <div class="sheet-tag">Your Account</div>
+    <div class="sheet-title" id="profileName">—</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:10px" id="profileEmail">—</div>
     <div id="profilePlanBadge" style="margin-bottom:22px"></div>
-    <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px">
-      <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px">THIS MONTH</div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Total spent</span><span style="font-weight:700;color:var(--danger)" id="profileSpent">₦0</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:8px"><span style="color:var(--muted)">Transactions</span><span style="font-weight:700" id="profileCount">0</span></div>
+    <div style="background:var(--bg);border-radius:14px;padding:18px;margin-bottom:20px;border:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:14px;text-transform:uppercase">This Month</div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:10px"><span style="color:var(--text2)">Total spent</span><span style="font-weight:800;color:var(--red)" id="profileSpent">₦0</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--text2)">Transactions</span><span style="font-weight:800" id="profileCount">0</span></div>
     </div>
-    <button class="btn btn-outline" onclick="signOut()">SIGN OUT</button>
+    <button class="btn btn-ghost" onclick="signOut()">Sign Out</button>
   </div>
 </div>
 
@@ -375,42 +470,35 @@ textarea::placeholder{color:rgba(255,255,255,0.2)}
 <!-- BUDGET MODAL -->
 <div class="modal-overlay hidden" id="budgetModal" onclick="closeBudgetModal()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">SET BUDGET</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Monthly Category Limit</div>
-    <div class="field">
-      <div class="field-label">Category</div>
-      <select id="budgetCat" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none">
-        <option value="">Choose category</option>
-      </select>
-    </div>
-    <div class="field">
-      <div class="field-label">Monthly Limit (₦)</div>
-      <input type="number" id="budgetAmount" placeholder="e.g. 20000" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/>
-    </div>
-    <button class="btn btn-accent" onclick="saveBudget()">SAVE BUDGET</button>
-    <button onclick="closeBudgetModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">Cancel</button>
+    <div class="sheet-tag">Set Budget</div>
+    <div class="sheet-title" style="margin-bottom:22px">Monthly Category Limit</div>
+    <div class="field"><div class="field-label">Category</div><select id="budgetCat"><option value="">Choose category</option></select></div>
+    <div class="field"><div class="field-label">Monthly Limit (₦)</div><input type="number" id="budgetAmount" placeholder="e.g. 20000"/></div>
+    <button class="btn btn-blue" onclick="saveBudget()" style="margin-bottom:10px">Save Budget</button>
+    <button onclick="closeBudgetModal()" class="btn btn-ghost">Cancel</button>
   </div>
 </div>
 
 <!-- GOAL MODAL -->
 <div class="modal-overlay hidden" id="goalModal" onclick="closeGoalModal()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">NEW GOAL</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:20px">Set a Savings Goal</div>
-    <div class="field"><div class="field-label">Goal Name</div><input type="text" id="goalName" placeholder="e.g. New iPhone, Rent, Travel" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
-    <div class="field"><div class="field-label">Target Amount (₦)</div><input type="number" id="goalTarget" placeholder="e.g. 150000" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
-    <div class="field"><div class="field-label">Amount Saved So Far (₦)</div><input type="number" id="goalSaved" placeholder="0" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-m);font-size:14px;outline:none"/></div>
-    <button class="btn btn-accent" onclick="saveGoal()">SAVE GOAL</button>
-    <button onclick="closeGoalModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">Cancel</button>
+    <div class="sheet-tag">New Goal</div>
+    <div class="sheet-title" style="margin-bottom:22px">Set a Savings Goal</div>
+    <div class="field"><div class="field-label">Goal Name</div><input type="text" id="goalName" placeholder="e.g. New Phone, Rent, Travel"/></div>
+    <div class="field"><div class="field-label">Target Amount (₦)</div><input type="number" id="goalTarget" placeholder="e.g. 150000"/></div>
+    <div class="field"><div class="field-label">Amount Saved So Far (₦)</div><input type="number" id="goalSaved" placeholder="0"/></div>
+    <button class="btn btn-blue" onclick="saveGoal()" style="margin-bottom:10px">Save Goal</button>
+    <button onclick="closeGoalModal()" class="btn btn-ghost">Cancel</button>
   </div>
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// Load Paystack without blocking
 (function(){const s=document.createElement('script');s.src='https://js.paystack.co/v1/inline.js';s.async=true;document.head.appendChild(s);})();
 </script>
 <script>
+
 // ══════════════════════════════════════════
 // ⚙️  CONFIG
 // ══════════════════════════════════════════
@@ -499,14 +587,14 @@ async function updatePassword(){
   const confirm=document.getElementById("confirmPassword").value;
   const msg=document.getElementById("updatePwMsg");
   msg.textContent="";
-  if(pw.length<6){msg.style.color="var(--danger)";msg.textContent="Password must be at least 6 characters.";return;}
-  if(pw!==confirm){msg.style.color="var(--danger)";msg.textContent="Passwords do not match.";return;}
+  if(pw.length<6){msg.style.color="var(--red)";msg.textContent="Password must be at least 6 characters.";return;}
+  if(pw!==confirm){msg.style.color="var(--red)";msg.textContent="Passwords do not match.";return;}
   const btn=event.target;
   btn.innerHTML='<span class="spinner"></span>UPDATING...';btn.disabled=true;
   try{
     const{error}=await sb.auth.updateUser({password:pw});
     if(error)throw error;
-    msg.style.color="var(--accent2)";
+    msg.style.color="var(--green)";
     msg.textContent="✓ Password updated! Redirecting...";
     setTimeout(()=>{
       document.getElementById("updatePwScreen").style.display="none";
@@ -515,7 +603,7 @@ async function updatePassword(){
       showAuth();
     },2000);
   }catch(e){
-    msg.style.color="var(--danger)";
+    msg.style.color="var(--red)";
     msg.textContent=e.message||"Something went wrong.";
     btn.innerHTML="UPDATE PASSWORD";btn.disabled=false;
   }
@@ -569,18 +657,18 @@ async function sendReset(){
   const btn=document.getElementById("resetBtn");
   const msg=document.getElementById("resetMsg");
   msg.textContent="";
-  if(!email){msg.style.color="var(--danger)";msg.textContent="Please enter your email.";return;}
+  if(!email){msg.style.color="var(--red)";msg.textContent="Please enter your email.";return;}
   btn.innerHTML='<span class="spinner"></span>SENDING...';btn.disabled=true;
   try{
     const{error}=await sb.auth.resetPasswordForEmail(email,{
       redirectTo: window.location.origin
     });
     if(error)throw error;
-    msg.style.color="var(--accent2)";
+    msg.style.color="var(--green)";
     msg.textContent="✓ Reset link sent! Check your email.";
     btn.innerHTML="SENT ✓";
   }catch(e){
-    msg.style.color="var(--danger)";
+    msg.style.color="var(--red)";
     msg.textContent=e.message||"Something went wrong.";
     btn.innerHTML="SEND RESET LINK";btn.disabled=false;
   }
@@ -604,7 +692,7 @@ async function handleAuth(){
   const name=document.getElementById("authName").value.trim();
   const btn=document.getElementById("authBtn");
   const msg=document.getElementById("authMsg");
-  msg.style.color="var(--danger)";msg.textContent="";
+  msg.style.color="var(--red)";msg.textContent="";
   if(!email||!pass){msg.textContent="Please fill in all fields.";return;}
   btn.innerHTML='<span class="spinner"></span>LOADING...';btn.disabled=true;
   try{
@@ -617,7 +705,7 @@ async function handleAuth(){
       if(!name){msg.textContent="Please enter your name.";return;}
       const{error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
       if(error)throw error;
-      msg.style.color="var(--accent2)";
+      msg.style.color="var(--green)";
       msg.textContent="Account created! Check your email to confirm.";
     }
   }catch(e){msg.textContent=e.message||"Something went wrong.";}
@@ -687,7 +775,7 @@ function switchTab(t){
     if(nav)nav.className="nav-item"+(id===t?" active":"");
   });
   document.getElementById("appScroll").scrollTop=0;
-  if(t==="transactions")renderTx();
+  if(t==="history")renderTx();
   if(t==="insight")renderInsight();
 }
 
@@ -717,7 +805,7 @@ function renderBankCards(){
       </div>
       <div class="bank-nums">
         <div><div class="num-label">BALANCE</div><div class="num-val">${naira(bal)}</div></div>
-        <div style="text-align:right"><div class="num-label">TRACKED SPEND</div><div class="num-val" style="color:var(--danger)">${naira(spent)}</div></div>
+        <div style="text-align:right"><div class="num-label">TRACKED SPEND</div><div class="num-val" style="color:var(--red)">${naira(spent)}</div></div>
       </div>
       <div class="bar-track"><div class="bar-fill" style="background:${bank.color};width:${Math.min(pct,100)}%"></div></div>
       <div class="bar-note">${pct}% of balance spent</div>
@@ -1003,7 +1091,7 @@ function detectBills(){
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${count}x detected</div>
       </div>
       <div style="text-align:right">
-        <div style="font-weight:700;color:var(--danger)">${naira(avg)}</div>
+        <div style="font-weight:700;color:var(--red)">${naira(avg)}</div>
         <div style="font-size:10px;color:var(--muted)">avg/time</div>
       </div>
     </div>`;
@@ -1028,7 +1116,7 @@ function renderForecast(){
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1;background:rgba(255,107,53,0.1);border-radius:12px;padding:12px;border:1px solid rgba(255,107,53,0.2)">
         <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">PROJECTED SPEND</div>
-        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--danger)">${naira(Math.round(projectedTotal))}</div>
+        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--red)">${naira(Math.round(projectedTotal))}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">this month</div>
       </div>
       <div style="flex:1;background:rgba(99,102,241,0.1);border-radius:12px;padding:12px;border:1px solid rgba(99,102,241,0.2)">
@@ -1062,7 +1150,7 @@ function renderMerchantIntel(){
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${data.count} transaction${data.count>1?"s":""}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-weight:700;color:var(--danger)">${naira(data.total)}</div>
+        <div style="font-weight:700;color:var(--red)">${naira(data.total)}</div>
         <div style="font-size:10px;color:var(--muted)">${naira(Math.round(data.total/data.count))} avg</div>
       </div>
     </div>`).join("");
@@ -1128,12 +1216,12 @@ function renderBudgets(){
     return`<div style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px">
         <span>${ICONS[cat]} ${cat}</span>
-        <span style="color:${over?"var(--danger)":"var(--muted)"}">${naira(spent)} / ${naira(limit)}</span>
+        <span style="color:${over?"var(--red)":"var(--muted)"}">${naira(spent)} / ${naira(limit)}</span>
       </div>
       <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
-        <div style="height:100%;border-radius:3px;background:${over?"var(--danger)":COLORS[cat]};width:${pct}%;transition:width 0.8s ease"></div>
+        <div style="height:100%;border-radius:3px;background:${over?"var(--red)":COLORS[cat]};width:${pct}%;transition:width 0.8s ease"></div>
       </div>
-      ${over?`<div style="font-size:10px;color:var(--danger);margin-top:3px">⚠️ Over budget by ${naira(spent-limit)}</div>`:""}
+      ${over?`<div style="font-size:10px;color:var(--red);margin-top:3px">⚠️ Over budget by ${naira(spent-limit)}</div>`:""}
     </div>`;
   }).join("");
 }
@@ -1170,11 +1258,11 @@ function renderGoals(){
         <button onclick="deleteGoal(${i})" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font-m)">remove</button>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
-        <span style="color:var(--muted)">Saved: <strong style="color:var(--accent2)">${naira(g.saved)}</strong></span>
+        <span style="color:var(--muted)">Saved: <strong style="color:var(--green)">${naira(g.saved)}</strong></span>
         <span style="color:var(--muted)">Goal: <strong style="color:var(--text)">${naira(g.target)}</strong></span>
       </div>
       <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:6px">
-        <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:${pct}%;transition:width 0.8s ease"></div>
+        <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--green));width:${pct}%;transition:width 0.8s ease"></div>
       </div>
       <div style="font-size:10px;color:var(--muted)">${pct.toFixed(0)}% complete${months?` · ~${months} months to go`:" · Start saving to see estimate"}</div>
     </div>`;
@@ -1187,8 +1275,49 @@ function deleteGoal(i){
   renderGoals();showToast("Goal removed");
 }
 
+
+// ── THEME ──────────────────────────────────
+function applyTheme(){
+  const dark = localStorage.getItem("pb_theme") === "dark";
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  const btn = document.getElementById("themeBtn");
+  if(btn) btn.textContent = dark ? "☀️" : "🌙";
+}
+function toggleTheme(){
+  const current = localStorage.getItem("pb_theme") === "dark";
+  localStorage.setItem("pb_theme", current ? "light" : "dark");
+  applyTheme();
+}
+applyTheme();
+
+// ── DASHBOARD ──────────────────────────────
+function renderDashboard(){
+  const el = document.getElementById("recentTx");
+  if(!el) return;
+  if(expenses.length === 0){
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transactions yet</div><div class="empty-desc">Import a bank alert to get started</div></div>';
+  } else {
+    el.innerHTML = expenses.slice(0,3).map(e =>
+      '<div class="tx-item"><div class="tx-icon" style="background:' + COLORS[e.category] + '18">' + ICONS[e.category] + '</div>' +
+      '<div style="flex:1;min-width:0"><div class="tx-name">' + e.name + '</div>' +
+      '<div class="tx-meta"><span class="tx-date">' + timeAgo(e.date) + '</span></div></div>' +
+      '<div class="tx-amt" style="color:' + COLORS[e.category] + '">' + naira(e.amount) + '</div></div>'
+    ).join("");
+  }
+  const p = getPersonality();
+  const dp = document.getElementById("dashPersonality");
+  if(dp){
+    if(p && expenses.length > 0){
+      dp.innerHTML = '<div class="personality-card"><div class="personality-name">' + p.name + '</div><div class="personality-msg">' + p.msg + '</div></div>';
+    } else {
+      dp.innerHTML = "";
+    }
+  }
+}
+
 // ── START ─────────────────────────────────
 init();
+
 </script>
 </body>
 </html>
