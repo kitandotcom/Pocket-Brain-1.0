@@ -1,3 +1,4 @@
+// /sw.js - Place in ROOT folder
 const CACHE = "pb-v1";
 const ASSETS = ["/", "/index.html", "/manifest.json"];
 
@@ -15,7 +16,9 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   // Don't cache API calls or Supabase
-  if (e.request.url.includes("/api/") || e.request.url.includes("supabase")) return;
+  if (e.request.url.includes("/api/") || e.request.url.includes("supabase")) {
+    return;
+  }
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
   );
