@@ -347,6 +347,34 @@ select:focus{border-color:var(--accent)}
         </div>
         <div id="parseError" class="hidden err-card">⚠️ Couldn't parse that alert. Try pasting the full raw SMS text.</div>
       </div>
+
+        <!-- Bank Statement / Screenshot Upload -->
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title">📄 Upload Bank Statement or Screenshot</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">Upload a bank statement PDF or a screenshot of your transactions. AI will extract and categorize all transactions automatically.</div>
+          
+          <!-- Drop zone -->
+          <div id="dropZone" onclick="document.getElementById('fileInput').click()" 
+            style="border:2px dashed var(--accent);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;background:var(--accent-light);transition:all .2s;margin-bottom:14px">
+            <div style="font-size:36px;margin-bottom:10px">📁</div>
+            <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px">Tap to upload file</div>
+            <div style="font-size:12px;color:var(--text2)">PDF bank statement or JPG/PNG screenshot</div>
+          </div>
+          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFileUpload(event)"/>
+          
+          <div id="uploadStatus" style="display:none;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px" id="uploadStatusText">Processing...</div>
+            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div id="uploadProgress" style="height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .3s ease"></div>
+            </div>
+          </div>
+
+          <div id="extractedTxList" style="display:none">
+            <div style="font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.5px;margin-bottom:12px;text-transform:uppercase">EXTRACTED TRANSACTIONS</div>
+            <div id="extractedTxItems"></div>
+            <button class="btn btn-green" onclick="saveAllExtracted()" id="saveAllBtn" style="margin-top:8px">Save All Transactions ✓</button>
+          </div>
+        </div>
     </div>
 
     <!-- HISTORY -->
@@ -756,13 +784,13 @@ function updateStats(){
   const catT={};CATS.forEach(c=>{catT[c]=expenses.filter(e=>e.category===c).reduce((s,e)=>s+Number(e.amount),0);});
   const top=Object.entries(catT).sort((a,b)=>b[1]-a[1])[0];
   const totalBal=linkedBanks.reduce((s,b)=>s+Number(b.balance||0),0);
-  document.getElementById("heroBalance").textContent=naira(Math.max(0,totalBal-total));
-  document.getElementById("heroSub").textContent=`${expenses.length} transaction${expenses.length!==1?"s":""} tracked`;
-  document.getElementById("statSpent").textContent=naira(total);
-  document.getElementById("statCount").textContent=expenses.length;
-  document.getElementById("statTop").textContent=top&&top[1]>0?`${ICONS[top[0]]} ${top[0]}`:"—";
-  document.getElementById("profileSpent").textContent=naira(total);
-  document.getElementById("profileCount").textContent=expenses.length;
+  const _hb=document.getElementById("heroBalance");if(_hb)_hb.textContent=naira(Math.max(0,totalBal-total));
+  const _hs=document.getElementById("heroSub");if(_hs)_hs.textContent=expenses.length+" transaction"+(expenses.length!==1?"s":"")+" tracked";
+  const _hsp=document.getElementById("heroSpent");if(_hsp)_hsp.textContent=naira(total);
+  const _hc=document.getElementById("heroCount");if(_hc)_hc.textContent=expenses.length;
+  const _ht=document.getElementById("heroTop");if(_ht)_ht.textContent=top&&top[1]>0?ICONS[top[0]]:"—";
+  const _ps=document.getElementById("profileSpent");if(_ps)_ps.textContent=naira(total);
+  const _pc=document.getElementById("profileCount");if(_pc)_pc.textContent=expenses.length;
 }
 
 // ── TABS ──────────────────────────────────
@@ -785,9 +813,9 @@ function switchTab(t){
 function renderBankCards(){
   if(linkedBanks.length===0){
     document.getElementById("bankCards").innerHTML=`
-      <div style="text-align:center;padding:32px 20px;color:var(--muted)">
+      <div style="text-align:center;padding:32px 20px;color:var(--text2)">
         <div style="font-size:40px;margin-bottom:12px">🏦</div>
-        <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No banks linked yet</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No banks linked yet</div>
         <div style="font-size:12px;line-height:1.6">Tap below to add your bank account and start tracking your spending</div>
       </div>`;
     return;
@@ -900,7 +928,7 @@ function renderInsight(){
       <div class="br-header"><span>${ICONS[cat]} ${cat}</span><span style="font-weight:700;color:${COLORS[cat]}">${naira(val)}</span></div>
       <div class="bar-track"><div class="bar-fill" style="background:${COLORS[cat]};width:${(val/maxV)*100}%"></div></div>
       <div class="bar-note">${total>0?((val/total)*100).toFixed(1)+"% of total":""}</div>
-    </div>`).join(""):`<div style="color:var(--muted);font-size:13px">No data yet</div>`;
+    </div>`).join(""):`<div style="color:var(--text2);font-size:13px">No data yet</div>`;
   // Render all new features
   renderPersonality();
   detectBills();
@@ -928,7 +956,7 @@ async function getInsight(){
         messages:[{role:"user",content:`Analyze these bank transactions. Give 3 short punchy sentences of honest advice, mention actual merchant names and numbers. End with ONE specific action they can take this week to save money.\n\nTransactions:\n${summary}\nTotal: ${naira(total)}`}]})});
     const data=await res.json();
     document.getElementById("aiContent").innerHTML=`<div class="ai-text">${data.content?.[0]?.text||"Could not load."}</div>`;
-  }catch{document.getElementById("aiContent").innerHTML=`<div class="ai-text" style="color:var(--muted)">Failed. Check connection and try again.</div>`;}
+  }catch{document.getElementById("aiContent").innerHTML=`<div class="ai-text" style="color:var(--text2)">Failed. Check connection and try again.</div>`;}
   btn.innerHTML="🤖 ANALYZE MY SPENDING";btn.disabled=false;
 }
 
@@ -969,7 +997,7 @@ function hideProfile(){document.getElementById("profileOverlay").classList.add("
 function updateProfileUI(){
   document.getElementById("profilePlanBadge").innerHTML=userPro
     ?`<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-weight:700">✦ PRO MEMBER</span>`
-    :`<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,0.06);color:var(--muted)">FREE PLAN · <span onclick="hideProfile();showPaywall()" style="color:var(--accent);cursor:pointer">Upgrade →</span></span>`;
+    :`<span style="font-size:12px;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,0.06);color:var(--text2)">FREE PLAN · <span onclick="hideProfile();showPaywall()" style="color:var(--accent);cursor:pointer">Upgrade →</span></span>`;
 }
 
 // ── BANK MODAL ────────────────────────────
@@ -979,21 +1007,21 @@ function renderBankModal(){
   const el=document.getElementById("bankModalContent");
   if(bankModalStep===0){
     el.innerHTML=`<div style="font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:8px">LINK BANK</div>
-    <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px">Choose your bank</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Select the bank you want to track</div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px">Choose your bank</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Select the bank you want to track</div>
     ${BANKS_LIST.map(b=>`<button class="bank-option" onclick="selectBank('${b}')">${BANK_META[b]?.logo||'🏦'} ${b}</button>`).join("")}`;
   }else if(bankModalStep===1){
-    el.innerHTML=`<div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px">${selectedBankName}</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Enter your account details</div>
+    el.innerHTML=`<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px">${selectedBankName}</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Enter your account details</div>
     <div class="field"><div class="field-label">Last 4 digits of account number</div><input type="number" id="modalAccNum" placeholder="e.g. 4821" maxlength="4"/></div>
     <div class="field"><div class="field-label">Current Balance (₦)</div><input type="number" id="modalBalance" placeholder="e.g. 150000"/></div>
     <button class="btn btn-accent" onclick="confirmBankLink()">LINK BANK ✓</button>
-    <button onclick="bankModalStep=0;renderBankModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">← Back</button>`;
+    <button onclick="bankModalStep=0;renderBankModal()" style="width:100%;padding:12px;background:transparent;border:none;color:var(--text2);font-family:var(--font-m);font-size:12px;cursor:pointer;margin-top:8px">← Back</button>`;
   }else{
     el.innerHTML=`<div style="text-align:center;padding:24px 0">
       <div style="font-size:48px;margin-bottom:12px">✅</div>
-      <div style="font-family:var(--font-d);font-size:22px;font-weight:700">${selectedBankName} Linked!</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">Your account is now being tracked</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700">${selectedBankName} Linked!</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:8px">Your account is now being tracked</div>
     </div>`;
   }
 }
@@ -1044,14 +1072,15 @@ function getPersonality(){
 
 function renderPersonality(){
   const p=getPersonality();
-  const el=document.getElementById("personalityContent");
-  if(!p||expenses.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add transactions to reveal your spending personality</div>`;return;}
-  el.innerHTML=`
-    <div style="text-align:center;padding:8px 0">
-      <div style="font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--accent);margin-bottom:8px">${p.name}</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.6">${p.msg}</div>
-    </div>`;
+  const el=document.getElementById("personalityCard");
+  if(!el) return;
+  if(!p||expenses.length===0){
+    el.innerHTML='<div class="feat-card"><div style="font-size:13px;color:var(--text2)">Add transactions to reveal your spending personality</div></div>';
+    return;
+  }
+  el.innerHTML='<div class="personality-card"><div class="personality-name">'+p.name+'</div><div class="personality-msg">'+p.msg+'</div></div>';
 }
+
 
 // ── BROKE ALERT ───────────────────────────
 function saveBrokeAlert(){
@@ -1076,25 +1105,25 @@ function checkBrokeAlert(){
 // ── BILL DETECTOR ─────────────────────────
 function detectBills(){
   const el=document.getElementById("billDetector");
-  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add more transactions to detect recurring bills</div>`;return;}
+  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--text2)">Add more transactions to detect recurring bills</div>`;return;}
   const nameCounts={};
   expenses.forEach(e=>{
     const key=e.name.toLowerCase().trim();
     nameCounts[key]=(nameCounts[key]||0)+1;
   });
   const recurring=Object.entries(nameCounts).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]);
-  if(recurring.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No recurring bills detected yet</div>`;return;}
+  if(recurring.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--text2)">No recurring bills detected yet</div>`;return;}
   el.innerHTML=recurring.map(([name,count])=>{
     const exps=expenses.filter(e=>e.name.toLowerCase().trim()===name);
     const avg=exps.reduce((s,e)=>s+Number(e.amount),0)/exps.length;
     return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
       <div>
         <div style="font-size:13px;font-weight:600;text-transform:capitalize">${name}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${count}x detected</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">${count}x detected</div>
       </div>
       <div style="text-align:right">
         <div style="font-weight:700;color:var(--red)">${naira(avg)}</div>
-        <div style="font-size:10px;color:var(--muted)">avg/time</div>
+        <div style="font-size:10px;color:var(--text2)">avg/time</div>
       </div>
     </div>`;
   }).join("");
@@ -1103,7 +1132,7 @@ function detectBills(){
 // ── SPENDING FORECAST ─────────────────────
 function renderForecast(){
   const el=document.getElementById("forecastContent");
-  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add at least 3 transactions to see forecast</div>`;return;}
+  if(expenses.length<3){el.innerHTML=`<div style="font-size:12px;color:var(--text2)">Add at least 3 transactions to see forecast</div>`;return;}
   const now=new Date();
   const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const dayOfMonth=now.getDate();
@@ -1117,17 +1146,17 @@ function renderForecast(){
   el.innerHTML=`
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1;background:rgba(255,107,53,0.1);border-radius:12px;padding:12px;border:1px solid rgba(255,107,53,0.2)">
-        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">PROJECTED SPEND</div>
-        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--red)">${naira(Math.round(projectedTotal))}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">this month</div>
+        <div style="font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:4px">PROJECTED SPEND</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:var(--red)">${naira(Math.round(projectedTotal))}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">this month</div>
       </div>
       <div style="flex:1;background:rgba(99,102,241,0.1);border-radius:12px;padding:12px;border:1px solid rgba(99,102,241,0.2)">
-        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px">DAILY RATE</div>
-        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--accent)">${naira(Math.round(dailyRate))}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">per day</div>
+        <div style="font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:4px">DAILY RATE</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:var(--accent)">${naira(Math.round(dailyRate))}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">per day</div>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.6">
+    <div style="font-size:12px;color:var(--text2);line-height:1.6">
       At your current rate, you'll spend <strong style="color:var(--text)">${naira(Math.round(projectedTotal))}</strong> this month. 
       ${daysLeft} days left. ${dailyRate>0?`Try to keep daily spending under ${naira(Math.round(dailyRate*0.8))} to save more.`:""}
     </div>`;
@@ -1136,7 +1165,7 @@ function renderForecast(){
 // ── MERCHANT INTEL ────────────────────────
 function renderMerchantIntel(){
   const el=document.getElementById("merchantIntel");
-  if(expenses.length<2){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">Add more transactions to see merchant insights</div>`;return;}
+  if(expenses.length<2){el.innerHTML=`<div style="font-size:12px;color:var(--text2)">Add more transactions to see merchant insights</div>`;return;}
   const merchants={};
   expenses.forEach(e=>{
     const k=e.name;
@@ -1149,11 +1178,11 @@ function renderMerchantIntel(){
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
       <div>
         <div style="font-size:13px;font-weight:600">${name}</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${data.count} transaction${data.count>1?"s":""}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">${data.count} transaction${data.count>1?"s":""}</div>
       </div>
       <div style="text-align:right">
         <div style="font-weight:700;color:var(--red)">${naira(data.total)}</div>
-        <div style="font-size:10px;color:var(--muted)">${naira(Math.round(data.total/data.count))} avg</div>
+        <div style="font-size:10px;color:var(--text2)">${naira(Math.round(data.total/data.count))} avg</div>
       </div>
     </div>`).join("");
 }
@@ -1167,7 +1196,7 @@ async function generateWeeklySummary(){
   const weekAgo=new Date(Date.now()-7*24*60*60*1000).toISOString().split("T")[0];
   const weekExp=expenses.filter(e=>e.date>=weekAgo);
   if(weekExp.length===0){
-    document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--muted)">No transactions in the last 7 days</div>`;
+    document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--text2)">No transactions in the last 7 days</div>`;
     btn.innerHTML="📋 GENERATE WEEKLY SUMMARY";btn.disabled=false;return;
   }
   const total=weekExp.reduce((s,e)=>s+Number(e.amount),0);
@@ -1179,9 +1208,9 @@ async function generateWeeklySummary(){
     const data=await res.json();
     const text=data.content?.[0]?.text||"Could not generate summary.";
     document.getElementById("weeklySummaryContent").innerHTML=`
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">LAST 7 DAYS · ${weekExp.length} transactions · ${naira(total)}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">LAST 7 DAYS · ${weekExp.length} transactions · ${naira(total)}</div>
       <div style="font-size:13px;line-height:1.8">${text}</div>`;
-  }catch{document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--muted)">Failed. Try again.</div>`;}
+  }catch{document.getElementById("weeklySummaryContent").innerHTML=`<div style="font-size:12px;color:var(--text2)">Failed. Try again.</div>`;}
   btn.innerHTML="📋 REGENERATE";btn.disabled=false;
 }
 
@@ -1208,7 +1237,7 @@ function saveBudget(){
 function renderBudgets(){
   const el=document.getElementById("budgetsList");
   const entries=Object.entries(budgets);
-  if(entries.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No budgets set yet</div>`;return;}
+  if(entries.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--text2)">No budgets set yet</div>`;return;}
   const now=new Date();
   const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split("T")[0];
   el.innerHTML=entries.map(([cat,limit])=>{
@@ -1218,7 +1247,7 @@ function renderBudgets(){
     return`<div style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px">
         <span>${ICONS[cat]} ${cat}</span>
-        <span style="color:${over?"var(--red)":"var(--muted)"}">${naira(spent)} / ${naira(limit)}</span>
+        <span style="color:${over?"var(--red)":"var(--text2)"}">${naira(spent)} / ${naira(limit)}</span>
       </div>
       <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
         <div style="height:100%;border-radius:3px;background:${over?"var(--red)":COLORS[cat]};width:${pct}%;transition:width 0.8s ease"></div>
@@ -1247,7 +1276,7 @@ function saveGoal(){
 
 function renderGoals(){
   const el=document.getElementById("goalsList");
-  if(goals.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--muted)">No goals set yet</div>`;return;}
+  if(goals.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--text2)">No goals set yet</div>`;return;}
   const monthlySpend=expenses.reduce((s,e)=>s+Number(e.amount),0);
   const avgMonthlySavings=monthlySpend>0?monthlySpend*0.2:0;
   el.innerHTML=goals.map((g,i)=>{
@@ -1256,17 +1285,17 @@ function renderGoals(){
     const months=avgMonthlySavings>0?Math.ceil(remaining/avgMonthlySavings):null;
     return`<div style="margin-bottom:16px;background:rgba(255,255,255,0.02);border-radius:12px;padding:14px;border:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-family:var(--font-d);font-weight:700;font-size:14px">${g.name}</div>
-        <button onclick="deleteGoal(${i})" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font-m)">remove</button>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px">${g.name}</div>
+        <button onclick="deleteGoal(${i})" style="background:none;border:none;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--font-m)">remove</button>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
-        <span style="color:var(--muted)">Saved: <strong style="color:var(--green)">${naira(g.saved)}</strong></span>
-        <span style="color:var(--muted)">Goal: <strong style="color:var(--text)">${naira(g.target)}</strong></span>
+        <span style="color:var(--text2)">Saved: <strong style="color:var(--green)">${naira(g.saved)}</strong></span>
+        <span style="color:var(--text2)">Goal: <strong style="color:var(--text)">${naira(g.target)}</strong></span>
       </div>
       <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:6px">
         <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--green));width:${pct}%;transition:width 0.8s ease"></div>
       </div>
-      <div style="font-size:10px;color:var(--muted)">${pct.toFixed(0)}% complete${months?` · ~${months} months to go`:" · Start saving to see estimate"}</div>
+      <div style="font-size:10px;color:var(--text2)">${pct.toFixed(0)}% complete${months?` · ~${months} months to go`:" · Start saving to see estimate"}</div>
     </div>`;
   }).join("");
 }
@@ -1316,6 +1345,172 @@ function renderDashboard(){
     }
   }
 }
+
+
+// ── FILE UPLOAD / STATEMENT PARSER ───────
+let extractedTransactions = [];
+
+function handleFileUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  
+  const status = document.getElementById("uploadStatus");
+  const statusText = document.getElementById("uploadStatusText");
+  const progress = document.getElementById("uploadProgress");
+  const extractedList = document.getElementById("extractedTxList");
+  
+  status.style.display = "block";
+  extractedList.style.display = "none";
+  statusText.textContent = "Reading file...";
+  progress.style.width = "20%";
+
+  // Check file type
+  const isPDF = file.type === "application/pdf";
+  const isImage = file.type.startsWith("image/");
+  
+  if(!isPDF && !isImage){
+    statusText.textContent = "❌ Please upload a PDF or image file";
+    progress.style.width = "0%";
+    return;
+  }
+
+  const reader = new FileReader();
+  
+  reader.onload = async function(e){
+    progress.style.width = "50%";
+    statusText.textContent = "Sending to AI for analysis...";
+    
+    try{
+      const base64 = e.target.result.split(",")[1];
+      const mediaType = file.type;
+      
+      // Build the message with image/document
+      let messageContent;
+      if(isImage){
+        messageContent = [
+          {
+            type: "image",
+            source: { type: "base64", media_type: mediaType, data: base64 }
+          },
+          {
+            type: "text",
+            text: "This is a Nigerian bank statement screenshot or transaction list. Extract ALL transactions you can see. For each transaction return a JSON array with objects: {name, amount, date, category}. Category must be one of: Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other. Amount must be a number (no currency symbols). Date in YYYY-MM-DD format. Return ONLY the JSON array, no markdown, no explanation."
+          }
+        ];
+      } else {
+        // PDF - send as document
+        messageContent = [
+          {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: base64 }
+          },
+          {
+            type: "text", 
+            text: "This is a Nigerian bank statement PDF. Extract ALL debit/credit transactions. Return a JSON array: [{name, amount, date, category}]. Category from: Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other. Amount as number, date as YYYY-MM-DD. Return ONLY the JSON array."
+          }
+        ];
+      }
+
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ messages: [{ role: "user", content: messageContent }] })
+      });
+      
+      const data = await res.json();
+      progress.style.width = "85%";
+      
+      const text = data.content?.[0]?.text || "[]";
+      const clean = text.replace(/```json|```/g, "").trim();
+      extractedTransactions = JSON.parse(clean);
+      
+      if(!Array.isArray(extractedTransactions) || extractedTransactions.length === 0){
+        statusText.textContent = "❌ No transactions found. Try a clearer image.";
+        progress.style.width = "0%";
+        return;
+      }
+      
+      progress.style.width = "100%";
+      statusText.textContent = "✓ Found " + extractedTransactions.length + " transactions";
+      
+      // Show extracted transactions
+      renderExtractedTx();
+      extractedList.style.display = "block";
+      
+    } catch(err) {
+      statusText.textContent = "❌ Failed to process. Try again.";
+      progress.style.width = "0%";
+      console.error(err);
+    }
+  };
+  
+  reader.readAsDataURL(file);
+}
+
+function renderExtractedTx(){
+  const container = document.getElementById("extractedTxItems");
+  container.innerHTML = extractedTransactions.map((tx, i) => 
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)">' +
+    '<div style="flex:1;min-width:0">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + tx.name + '</div>' +
+    '<div style="font-size:11px;color:var(--text2);margin-top:3px">' + (tx.date||"—") + ' · ' + (ICONS[tx.category]||"📦") + ' ' + (tx.category||"Other") + '</div>' +
+    '</div>' +
+    '<div style="text-align:right;flex-shrink:0;margin-left:12px">' +
+    '<div style="font-size:14px;font-weight:800;color:var(--red)">₦' + Number(tx.amount||0).toLocaleString("en-NG") + '</div>' +
+    '<button onclick="removeExtracted(' + i + ')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit">remove</button>' +
+    '</div></div>'
+  ).join("");
+}
+
+function removeExtracted(i){
+  extractedTransactions.splice(i, 1);
+  if(extractedTransactions.length === 0){
+    document.getElementById("extractedTxList").style.display = "none";
+    document.getElementById("uploadStatusText").textContent = "All removed";
+  } else {
+    renderExtractedTx();
+    document.getElementById("uploadStatusText").textContent = "✓ " + extractedTransactions.length + " transactions";
+  }
+}
+
+async function saveAllExtracted(){
+  const btn = document.getElementById("saveAllBtn");
+  btn.innerHTML = '<span class="spinner"></span>Saving...';
+  btn.disabled = true;
+  let saved = 0;
+  for(const tx of extractedTransactions){
+    const ok = await saveExpense({
+      name: tx.name || "Unknown",
+      amount: tx.amount || 0,
+      category: tx.category || "Other",
+      date: tx.date || new Date().toISOString().split("T")[0],
+      source: "upload"
+    });
+    if(ok) saved++;
+  }
+  showToast(saved + " transactions saved ✓");
+  document.getElementById("extractedTxList").style.display = "none";
+  document.getElementById("uploadStatus").style.display = "none";
+  document.getElementById("fileInput").value = "";
+  extractedTransactions = [];
+  btn.innerHTML = "Save All Transactions ✓";
+  btn.disabled = false;
+  switchTab("history");
+}
+
+// Drag and drop support
+document.addEventListener("DOMContentLoaded", function(){
+  const zone = document.getElementById("dropZone");
+  if(!zone) return;
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.style.background = "var(--accent-light)"; zone.style.borderStyle = "solid"; });
+  zone.addEventListener("dragleave", () => { zone.style.borderStyle = "dashed"; });
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.style.borderStyle = "dashed";
+    const file = e.dataTransfer.files[0];
+    if(file){ document.getElementById("fileInput").files = e.dataTransfer.files; handleFileUpload({target:{files:[file]}}); }
+  });
+});
 
 // ── START ─────────────────────────────────
 init();
