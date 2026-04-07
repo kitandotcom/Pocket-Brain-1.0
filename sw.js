@@ -1,4 +1,3 @@
-// /sw.js - Place in ROOT folder
 const CACHE = "pb-v1";
 const ASSETS = ["/", "/index.html", "/manifest.json"];
 
