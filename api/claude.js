@@ -14,89 +14,201 @@ export default async function handler(req, res) {
     m.content.some(c => c.type === "image" || c.type === "document")
   );
 
-  // ── FILE UPLOADS: Use Anthropic (supports PDF + images) ──────────────
+  // ── FILE UPLOADS: Try DeepSeek FIRST (cheapest + supports PDF/images) ──
   if (hasFiles) {
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 2048,
-          ...(system && { system }),
-          messages,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Anthropic error");
-      return res.status(200).json(data);
-    } catch (err) {
-      // Fallback to Gemini for image parsing if Anthropic fails
-      return await geminiImageFallback(messages, res);
+      return await deepseekFileHandler(messages, system, res);
+    } catch (deepseekErr) {
+      console.error("DeepSeek failed, trying Anthropic:", deepseekErr.message);
+      // Fallback to Anthropic
+      try {
+        return await anthropicFileHandler(messages, system, res);
+      } catch (anthropicErr) {
+        // Final fallback to Gemini
+        return await geminiImageFallback(messages, res);
+      }
     }
   }
 
-  // ── TEXT REQUESTS: Try Groq first (free + fast) ───────────────────────
+  // ── TEXT REQUESTS: Try Groq → DeepSeek → Anthropic → Gemini ──
+  
+  // Try Groq first (fastest for text)
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 1024,
-        messages: [
-          ...(system ? [{ role: "system", content: system }] : []),
-          ...messages,
-        ],
-      }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "Groq error");
-    const text = data.choices?.[0]?.message?.content || "";
-    return res.status(200).json({ content: [{ type: "text", text }] });
+    return await groqTextHandler(messages, system, res);
   } catch (groqErr) {
-    console.error("Groq failed, trying Anthropic:", groqErr.message);
-
-    // Fallback 1: Anthropic
+    console.error("Groq failed, trying DeepSeek:", groqErr.message);
+    
+    // Try DeepSeek second (cheap & good for text)
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 1024,
-          ...(system && { system }),
-          messages,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Anthropic error");
-      return res.status(200).json(data);
-    } catch (anthropicErr) {
-      console.error("Anthropic failed, trying Gemini:", anthropicErr.message);
-
-      // Fallback 2: Gemini
+      return await deepseekTextHandler(messages, system, res);
+    } catch (deepseekErr) {
+      console.error("DeepSeek failed, trying Anthropic:", deepseekErr.message);
+      
+      // Try Anthropic third
       try {
+        return await anthropicTextHandler(messages, system, res);
+      } catch (anthropicErr) {
+        console.error("Anthropic failed, trying Gemini:", anthropicErr.message);
+        
+        // Final fallback to Gemini
         return await geminiText(messages, system, res);
-      } catch (geminiErr) {
-        return res.status(500).json({ error: "All AI providers failed: " + geminiErr.message });
       }
     }
   }
 }
 
-// ── GEMINI TEXT ────────────────────────────────────────────────────────
+// ========== DEEPSEEK HANDLERS ==========
+
+async function deepseekFileHandler(messages, system, res) {
+  // Convert your message format to DeepSeek's vision format
+  const userMessage = messages.find(m => m.role === "user");
+  if (!userMessage) throw new Error("No user message found");
+  
+  const content = [];
+  
+  // Handle both array and string content
+  if (Array.isArray(userMessage.content)) {
+    for (const part of userMessage.content) {
+      if (part.type === "text") {
+        content.push({ type: "text", text: part.text });
+      } else if (part.type === "image" || part.type === "document") {
+        // DeepSeek accepts base64 images/PDFs via image_url
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: `data:${part.source.media_type};base64,${part.source.data}`
+          }
+        });
+      }
+    }
+  } else if (typeof userMessage.content === "string") {
+    content.push({ type: "text", text: userMessage.content });
+  }
+  
+  const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content }
+      ],
+      max_tokens: 4096,
+      temperature: 0.1, // Lower = more consistent extraction
+    }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || "DeepSeek API error");
+  
+  return res.status(200).json({
+    content: [{ type: "text", text: data.choices[0].message.content }]
+  });
+}
+
+async function deepseekTextHandler(messages, system, res) {
+  const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        ...messages,
+      ],
+      max_tokens: 2048,
+      temperature: 0.7,
+    }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || "DeepSeek API error");
+  
+  return res.status(200).json({
+    content: [{ type: "text", text: data.choices[0].message.content }]
+  });
+}
+
+// ========== GROQ HANDLER ==========
+
+async function groqTextHandler(messages, system, res) {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 1024,
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        ...messages,
+      ],
+    }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || "Groq error");
+  
+  return res.status(200).json({
+    content: [{ type: "text", text: data.choices[0].message.content }]
+  });
+}
+
+// ========== ANTHROPIC HANDLERS ==========
+
+async function anthropicFileHandler(messages, system, res) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 2048,
+      ...(system && { system }),
+      messages,
+    }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || "Anthropic error");
+  return res.status(200).json(data);
+}
+
+async function anthropicTextHandler(messages, system, res) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      ...(system && { system }),
+      messages,
+    }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || "Anthropic error");
+  return res.status(200).json(data);
+}
+
+// ========== GEMINI HANDLERS (Fallbacks) ==========
+
 async function geminiText(messages, system, res) {
   const prompt = [
     system ? `System: ${system}\n\n` : "",
@@ -114,16 +226,15 @@ async function geminiText(messages, system, res) {
       }),
     }
   );
+  
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || "Gemini error");
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   return res.status(200).json({ content: [{ type: "text", text }] });
 }
 
-// ── GEMINI IMAGE FALLBACK ──────────────────────────────────────────────
 async function geminiImageFallback(messages, res) {
   try {
-    // Extract image from messages
     const parts = [];
     for (const msg of messages) {
       if (Array.isArray(msg.content)) {
@@ -138,7 +249,6 @@ async function geminiImageFallback(messages, res) {
           } else if (c.type === "text") {
             parts.push({ text: c.text });
           } else if (c.type === "document") {
-            // Gemini supports PDF too
             parts.push({
               inlineData: {
                 mimeType: "application/pdf",
@@ -163,6 +273,7 @@ async function geminiImageFallback(messages, res) {
         }),
       }
     );
+    
     const data = await response.json();
     if (!response.ok) throw new Error(data.error?.message || "Gemini error");
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
