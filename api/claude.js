@@ -1,166 +1,234 @@
+// /api/claude.js - Works with Access Bank parser output
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { messages, system } = req.body;
   if (!messages) return res.status(400).json({ error: "No messages provided" });
 
-  // Check if request has files (images or PDFs)
-  const hasFiles = messages.some(m =>
-    Array.isArray(m.content) &&
-    m.content.some(c => c.type === "image" || c.type === "document")
+  // Check for PDF files or images
+  const hasFile = messages.some(m =>
+    Array.isArray(m.content) && 
+    m.content.some(c => c.type === "document" || c.type === "image")
   );
 
-  // ── FILE UPLOADS ─────────────────────────────────────────────
-  if (hasFiles) {
-    // Try Anthropic first (best for files)
-    if (process.env.ANTHROPIC_API_KEY) {
-      try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
+  // If there's a file, use our bank statement parser
+  if (hasFile) {
+    try {
+      const userMessage = messages.find(m => m.role === "user");
+      const filePart = userMessage.content.find(c => c.type === "document" || c.type === "image");
+      
+      if (filePart && filePart.source?.data) {
+        // Call the parse-bank-statement endpoint
+        const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/api/parse-bank-statement`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 2048,
-            ...(system && { system }),
-            messages,
-          }),
+            fileBase64: filePart.source.data,
+            fileType: filePart.source.media_type || "application/pdf"
+          })
         });
-        const data = await response.json();
-        if (response.ok) return res.status(200).json(data);
-      } catch (e) { console.error("Anthropic file error:", e.message); }
-    }
-
-    // Fallback: Gemini (also supports images + PDFs)
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        return await geminiFile(messages, res);
-      } catch (e) { console.error("Gemini file error:", e.message); }
-    }
-
-    return res.status(500).json({ error: "No AI provider available for file processing. Add ANTHROPIC_API_KEY or GEMINI_API_KEY to Vercel env vars." });
-  }
-
-  // ── TEXT REQUESTS: Groq → Anthropic → Gemini ─────────────────
-  // Try Groq first (free + fast)
-  if (process.env.GROQ_API_KEY) {
-    try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          max_tokens: 1024,
-          messages: [
-            ...(system ? [{ role: "system", content: system }] : []),
-            ...messages,
-          ],
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        const text = data.choices?.[0]?.message?.content || "";
-        return res.status(200).json({ content: [{ type: "text", text }] });
-      }
-    } catch (e) { console.error("Groq error:", e.message); }
-  }
-
-  // Fallback: Anthropic
-  if (process.env.ANTHROPIC_API_KEY) {
-    try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 1024,
-          ...(system && { system }),
-          messages,
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) return res.status(200).json(data);
-    } catch (e) { console.error("Anthropic text error:", e.message); }
-  }
-
-  // Fallback: Gemini
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      return await geminiText(messages, system, res);
-    } catch (e) { console.error("Gemini text error:", e.message); }
-  }
-
-  return res.status(500).json({ error: "All AI providers failed. Check your API keys in Vercel env vars." });
-}
-
-async function geminiText(messages, system, res) {
-  const prompt = [
-    system ? `System: ${system}\n\n` : "",
-    ...messages.map(m => `${m.role === "user" ? "User" : "Assistant"}: ${typeof m.content === "string" ? m.content : (m.content.map(c => c.text || "").join(" "))}`)
-  ].join("\n");
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 1024 },
-      }),
-    }
-  );
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error?.message || "Gemini error");
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  return res.status(200).json({ content: [{ type: "text", text }] });
-}
-
-async function geminiFile(messages, res) {
-  const parts = [];
-  for (const msg of messages) {
-    if (Array.isArray(msg.content)) {
-      for (const c of msg.content) {
-        if (c.type === "image") {
-          parts.push({ inlineData: { mimeType: c.source.media_type, data: c.source.data } });
-        } else if (c.type === "document") {
-          parts.push({ inlineData: { mimeType: "application/pdf", data: c.source.data } });
-        } else if (c.type === "text") {
-          parts.push({ text: c.text });
+        
+        if (!response.ok) {
+          throw new Error(`Parser returned ${response.status}`);
         }
+        
+        const data = await response.json();
+        
+        // The parser returns either { success: true, transactions: [...] } or { transactions: [...] }
+        let rawTransactions = [];
+        if (data.transactions && Array.isArray(data.transactions)) {
+          rawTransactions = data.transactions;
+        } else if (data.success && data.transactions) {
+          rawTransactions = data.transactions;
+        } else {
+          throw new Error("Parser did not return transactions array");
+        }
+        
+        // Transform raw parser output into the frontend's expected format
+        const formattedTransactions = rawTransactions.map(tx => ({
+          date: tx.postDate || tx.date || new Date().toISOString().split('T')[0],
+          narration: tx.narration || "Unknown",
+          amount: tx.debit > 0 ? tx.debit : (tx.credit > 0 ? tx.credit : 0),
+          type: tx.debit > 0 ? "debit" : (tx.credit > 0 ? "credit" : "unknown"),
+          merchant: extractMerchantFromNarration(tx.narration || ""),
+          category: guessCategoryFromNarration(tx.narration || "")
+        }));
+        
+        return res.status(200).json({
+          content: [{ type: "text", text: JSON.stringify(formattedTransactions) }]
+        });
       }
-    } else if (typeof msg.content === "string") {
-      parts.push({ text: msg.content });
+    } catch (err) {
+      console.error("Parser error:", err);
+      // Fallback to simple text extraction
+      return await fallbackTextExtraction(req.body, res);
     }
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { maxOutputTokens: 2048 },
-      }),
-    }
-  );
+  // For text messages (SMS alerts, etc.), use Groq (free)
+  try {
+    return await groqHandler(messages, system, res);
+  } catch (err) {
+    console.error("Groq error:", err);
+    return await regexFallback(messages, res);
+  }
+}
+
+async function groqHandler(messages, system, res) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return await regexFallback(messages, res);
+  }
+  
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        ...(system ? [{ role: "system", content: system }] : []),
+        ...messages,
+      ],
+      max_tokens: 2048,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error("Groq API error");
+  }
+  
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error?.message || "Gemini file error");
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-  return res.status(200).json({ content: [{ type: "text", text }] });
+  return res.status(200).json({
+    content: [{ type: "text", text: data.choices[0].message.content }]
+  });
+}
+
+async function fallbackTextExtraction(reqBody, res) {
+  // Simple extraction when parser fails
+  const { messages } = reqBody;
+  const userMessage = messages.find(m => m.role === "user");
+  const text = typeof userMessage.content === 'string' ? userMessage.content : JSON.stringify(userMessage.content);
+  
+  const transactions = [];
+  const lines = text.split('\n');
+  const amountRegex = /(?:N|NGN|₦)\s*([\d,]+(?:\.\d{2})?)/i;
+  
+  for (const line of lines) {
+    const match = line.match(amountRegex);
+    if (match) {
+      const amount = parseFloat(match[1].replace(/,/g, ''));
+      if (amount > 0 && amount < 10000000) {
+        transactions.push({
+          date: new Date().toISOString().split('T')[0],
+          narration: line.substring(0, 100),
+          amount: amount,
+          type: 'debit',
+          merchant: extractSimpleMerchant(line),
+          category: 'Other'
+        });
+      }
+    }
+  }
+  
+  return res.status(200).json({
+    content: [{ type: "text", text: JSON.stringify(transactions.length ? transactions : [{ error: "Could not parse any transaction", original: text.substring(0, 200) }]) }]
+  });
+}
+
+async function regexFallback(messages, res) {
+  const userMessage = messages.find(m => m.role === "user");
+  const text = typeof userMessage.content === 'string' ? userMessage.content : JSON.stringify(userMessage.content);
+  
+  const transactions = [];
+  const patterns = [
+    /(?:debit|spent|paid)\s+(?:N|NGN|₦)\s*([\d,]+(?:\.\d{2})?)\s+(?:at|to|for)\s+([A-Z][A-Za-z\s]+)/i,
+    /(?:N|NGN|₦)\s*([\d,]+(?:\.\d{2})?)\s+(?:debited|deducted)\s+(?:for|from)\s+([A-Z][A-Za-z\s]+)/i,
+    /alert:\s*(?:N|NGN|₦)\s*([\d,]+(?:\.\d{2})?)\s+(?:at|from)\s+([A-Z][A-Za-z\s]+)/i,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      transactions.push({
+        date: new Date().toISOString().split('T')[0],
+        narration: match[2]?.trim() || "Transaction",
+        amount: parseFloat(match[1].replace(/,/g, '')),
+        type: 'debit',
+        merchant: match[2]?.trim() || "Unknown",
+        category: 'Other'
+      });
+    }
+  }
+  
+  if (transactions.length === 0) {
+    return res.status(200).json({
+      content: [{ type: "text", text: JSON.stringify([{ error: "Could not parse", original: text.substring(0, 200) }]) }]
+    });
+  }
+  
+  return res.status(200).json({
+    content: [{ type: "text", text: JSON.stringify(transactions) }]
+  });
+}
+
+// Helper functions for merchant/category extraction (same as before)
+function extractMerchantFromNarration(narration) {
+  const patterns = [
+    /\/([A-Z][A-Za-z\s]+?)(?:\s*-\s*\d+|$)/,
+    /TRF (?:TO|FROM)\s+([A-Z][A-Za-z\s]+?)(?:\s+\d+|$)/,
+    /Paystack\/[^\/]+\/([A-Za-z0-9]+)/,
+    /for\s+([A-Z][A-Za-z\s]{3,30})/,
+  ];
+  for (const pattern of patterns) {
+    const match = narration.match(pattern);
+    if (match) return match[1].trim().substring(0, 40);
+  }
+  const words = narration.split(/\s+/);
+  for (let w of words) {
+    if (w.length > 4 && w[0] === w[0].toUpperCase() && !w.includes('/')) {
+      return w.substring(0, 40);
+    }
+  }
+  return "Unknown Merchant";
+}
+
+function guessCategoryFromNarration(narration) {
+  const lower = narration.toLowerCase();
+  if (lower.includes('food') || lower.includes('restaurant') || lower.includes('cafe')) return 'Food & Dining';
+  if (lower.includes('bet') || lower.includes('sporty') || lower.includes('gaming')) return 'Betting & Gaming';
+  if (lower.includes('transport') || lower.includes('bus') || lower.includes('logistics')) return 'Transport';
+  if (lower.includes('sms') || lower.includes('fee') || lower.includes('charge') || lower.includes('commission')) return 'Bank Fees';
+  if (lower.includes('paystack') || lower.includes('transfer')) return 'Transfer';
+  if (lower.includes('access') && lower.includes('bank')) return 'Bank Transfer';
+  if (lower.includes('roblox') || lower.includes('google')) return 'Entertainment';
+  if (lower.includes('piggytech')) return 'Savings';
+  return 'Other';
+}
+
+function extractSimpleMerchant(text) {
+  const patterns = [
+    /(?:at|from|to)\s+([A-Z][A-Za-z\s]{3,30})/i,
+    /for\s+([A-Z][A-Za-z\s]{3,30})/i,
+    /-\s+([A-Z][A-Za-z\s]{3,20})/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match[1].trim();
+  }
+  const words = text.split(/\s+/);
+  for (let i = 0; i < words.length; i++) {
+    if (words[i].length > 5 && words[i][0] === words[i][0].toUpperCase()) {
+      return words[i];
+    }
+  }
+  return "Unknown Merchant";
 }
