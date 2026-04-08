@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 }
 
 function parseAccessBankStatement(text) {
-  // ----- Account Summary -----
+  // ----- Account Summary (from the retail accounts table) -----
   const summary = { openingBalance: 0, totalDebits: 0, totalCredits: 0, closingBalance: 0 };
   const retailMatch = text.match(/165\*\*\*289.*?([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/);
   if (retailMatch) {
@@ -39,13 +39,13 @@ function parseAccessBankStatement(text) {
   }
 
   // ----- Transactions -----
-  const transactions = [];
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  
+  const transactions = [];
   let i = 0;
+
   while (i < lines.length) {
     const line = lines[i];
-    // Look for a line that starts with a date like DD/MM/YYYY
+    // Transaction starts with a line that is exactly a date (DD/MM/YYYY)
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(line)) {
       const postDate = line;
       i++;
@@ -56,51 +56,58 @@ function parseAccessBankStatement(text) {
         continue;
       }
       i++;
-      
-      // Collect narration (may span multiple lines)
+
+      // Collect narration (may span multiple lines until we hit a long number)
       let narrationParts = [];
       while (i < lines.length && !/^\d{2}\/\d{2}\/\d{4}$/.test(lines[i]) && !/^[\d,]+\.\d{2}$/.test(lines[i])) {
+        // Stop if we encounter a long numeric string (reference number)
+        if (/^\d{10,}$/.test(lines[i])) break;
         narrationParts.push(lines[i]);
         i++;
       }
       const narration = narrationParts.join(' ').replace(/\s+/g, ' ').trim();
-      
-      // Next token is reference number (alphanumeric, often long)
-      let refNumber = '';
-      if (i < lines.length && /^[A-Z0-9]{6,}$/.test(lines[i])) {
-        refNumber = lines[i];
+
+      // First reference number (long, e.g., 000014260203220757245428)
+      let ref1 = '';
+      if (i < lines.length && /^\d{20,}$/.test(lines[i])) {
+        ref1 = lines[i];
         i++;
       }
-      
-      // Next is debit amount (or blank if credit)
+
+      // Second reference number (shorter, e.g., 781373)
+      let ref2 = '';
+      if (i < lines.length && /^\d{6,}$/.test(lines[i]) && !/^\d{2}\/\d{2}\/\d{4}$/.test(lines[i])) {
+        ref2 = lines[i];
+        i++;
+      }
+
+      // Debit amount (positive number with commas and two decimals)
       let debit = 0;
-      let credit = 0;
       if (i < lines.length && /^[\d,]+\.\d{2}$/.test(lines[i])) {
-        const amount = parseFloat(lines[i].replace(/,/g, ''));
-        // Determine if debit or credit based on context (narration often contains "TRF TO" for debit, "TRF FROM" for credit)
-        if (narration.includes('TRF TO') || narration.includes('Paystack') || narration.includes('COMMISSION') || narration.includes('VAT') || narration.includes('SMS Alert') || narration.includes('WEB PYMT')) {
-          debit = amount;
-        } else if (narration.includes('TRF FROM') || narration.includes('Transfer from') || narration.includes('NIP TFR FROM')) {
-          credit = amount;
-        } else {
-          // Fallback: assume credit if positive and no "TO" indicator
-          credit = amount;
-        }
+        debit = parseFloat(lines[i].replace(/,/g, ''));
         i++;
       }
-      
-      // Next is balance (optional, may be missing)
+
+      // Balance after transaction
       let balance = 0;
       if (i < lines.length && /^[\d,]+\.\d{2}$/.test(lines[i])) {
         balance = parseFloat(lines[i].replace(/,/g, ''));
         i++;
       }
-      
+
+      // Determine credit amount: if narration indicates incoming money
+      let credit = 0;
+      if (narration.includes('TRF FROM') || narration.includes('Transfer from') || narration.includes('NIP TFR FROM')) {
+        credit = debit;
+        debit = 0;
+      }
+
       transactions.push({
         postDate,
         valueDate,
         narration,
-        refNumber,
+        reference1: ref1,
+        reference2: ref2,
         debit,
         credit,
         balance
@@ -109,11 +116,11 @@ function parseAccessBankStatement(text) {
       i++;
     }
   }
-  
+
   return {
-    bank: "Access Bank (Nigeria)",
+    bank: "Access Bank Nigeria",
     summary,
     transactions,
-    rawText: text.substring(0, 1000) // optional, truncate for response size
+    transactionCount: transactions.length
   };
 }
