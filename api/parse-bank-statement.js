@@ -1,3 +1,6 @@
+// /api/parse-bank-statement.js
+import pdfParse from 'pdf-parse';
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -10,7 +13,7 @@ export default async function handler(req, res) {
   if (!fileBase64) return res.status(400).json({ error: "No file provided" });
 
   try {
-    // Extract text from PDF
+    // Extract text from PDF using pdf-parse
     const pdfText = await extractTextFromPDF(fileBase64);
     
     // Detect which bank this statement is from
@@ -32,7 +35,18 @@ export default async function handler(req, res) {
   }
 }
 
-// Detect which Nigerian bank
+// ============================================================
+// PDF TEXT EXTRACTION (NOW REAL)
+// ============================================================
+async function extractTextFromPDF(base64Data) {
+  const buffer = Buffer.from(base64Data, 'base64');
+  const data = await pdfParse(buffer);
+  return data.text;
+}
+
+// ============================================================
+// BANK DETECTION
+// ============================================================
 function detectBankType(text) {
   const textLower = text.toLowerCase();
   
@@ -49,52 +63,46 @@ function detectBankType(text) {
   if (textLower.includes('providus')) return 'PROVIDUS';
   if (textLower.includes('fidelity')) return 'FIDELITY';
   if (textLower.includes('union bank')) return 'UNION';
-  if (textLower.includes('heritage')) return 'HERITAGE';
-  if (textLower.includes('jaiz')) return 'JAIZ';
-  if (textLower.includes('polaris')) return 'POLARIS';
-  if (textLower.includes('keystone')) return 'KEYSTONE';
-  if (textLower.includes('globus')) return 'GLOBUS';
-  if (textLower.includes('titan')) return 'TITAN';
-  if (textLower.includes('sparkle')) return 'SPARKLE';
-  if (textLower.includes('vfd')) return 'VFD';
-  if (textLower.includes('lotus')) return 'LOTUS';
-  if (textLower.includes('suntrust')) return 'SUNTRUST';
   
   return 'UNKNOWN';
 }
 
-// Main parser - tries multiple patterns for any bank
+// ============================================================
+// MAIN PARSER - COMBINES ALL STRATEGIES
+// ============================================================
 function parseNigerianBankStatement(text, bankType) {
   let transactions = [];
   
-  // Try different parsing strategies
-  const strategies = [
-    () => parseStandardTableFormat(text),      // Most Nigerian banks
-    () => parseAccessBankFormat(text),         // Access Bank specific
-    () => parseGTBankFormat(text),             // GTBank specific
-    () => parseFirstBankFormat(text),          // First Bank specific
-    () => parseUBAFormat(text),                // UBA specific
-    () => parseZenithFormat(text),             // Zenith specific
-    () => parseKudaFormat(text),               // Kuda specific
-    () => parseCSVFormat(text),                // Any CSV-like format
-    () => parseLineByLine(text),               // Fallback: line by line
-  ];
+  // Try specific bank parsers first
+  const specificParsers = {
+    'ACCESS': parseAccessBankFormat,
+    'GTBANK': parseGTBankFormat,
+    'FIRSTBANK': parseFirstBankFormat,
+    'UBA': parseUBAFormat,
+    'ZENITH': parseZenithFormat,
+    'KUDA': parseKudaFormat,
+  };
   
-  for (const strategy of strategies) {
-    try {
-      const result = strategy();
+  if (specificParsers[bankType]) {
+    transactions = specificParsers[bankType](text);
+  }
+  
+  // If specific parser found nothing, try generic strategies
+  if (transactions.length === 0) {
+    const genericStrategies = [
+      parseStandardTableFormat,
+      parseCSVFormat,
+      parseLineByLine,
+      parseWithRegexPatterns
+    ];
+    
+    for (const strategy of genericStrategies) {
+      const result = strategy(text);
       if (result && result.length > 0) {
         transactions = result;
         break;
       }
-    } catch (err) {
-      continue;
     }
-  }
-  
-  // If still no transactions, try regex pattern matching
-  if (transactions.length === 0) {
-    transactions = parseWithRegexPatterns(text);
   }
   
   // Remove duplicates
@@ -106,44 +114,11 @@ function parseNigerianBankStatement(text, bankType) {
   return transactions;
 }
 
-// Strategy 1: Standard table format (most banks)
-function parseStandardTableFormat(text) {
-  const transactions = [];
-  const lines = text.split('\n');
-  
-  // Common patterns for Nigerian bank statements
-  const patterns = [
-    // Pattern: Date | Description | Debit | Credit | Balance
-    /(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+([A-Za-z0-9\s\.,\-]+?)\s+([\d,]+\.\d{2})?\s+([\d,]+\.\d{2})?\s+([\d,]+\.\d{2})/i,
-    // Pattern: Date - Description - Amount
-    /(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+[-–]\s+(.+?)\s+[-–]\s+([\d,]+\.\d{2})/i,
-    // Pattern: DD/MM/YYYY DESCRIPTION NGN XXX.XX
-    /(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+(.+?)\s+(?:NGN|N|₦)\s+([\d,]+\.\d{2})/i,
-  ];
-  
-  for (const line of lines) {
-    for (const pattern of patterns) {
-      const match = line.match(pattern);
-      if (match) {
-        const transaction = {
-          date: formatDate(match[1]),
-          narration: cleanNarration(match[2]),
-          amount: parseAmount(match[3] || match[4] || match[2]),
-          type: determineType(line, match)
-        };
-        
-        if (transaction.amount > 0) {
-          transactions.push(transaction);
-        }
-        break;
-      }
-    }
-  }
-  
-  return transactions;
-}
+// ============================================================
+// BANK-SPECIFIC PARSERS
+// ============================================================
 
-// Strategy 2: Access Bank specific format
+// Access Bank
 function parseAccessBankFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
@@ -184,13 +159,12 @@ function parseAccessBankFormat(text) {
   return transactions;
 }
 
-// Strategy 3: GTBank format
+// GTBank
 function parseGTBankFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
   
   for (const line of lines) {
-    // GTBank format: 07/04/2026 14:30 POS PURCHASE CHICKEN REPUBLIC  N5,000.00
     const match = line.match(/(\d{2}\/\d{2}\/\d{4})\s+[\d:]+\s+(.+?)\s+(?:N|NGN|₦)\s*([\d,]+\.\d{2})/i);
     if (match) {
       transactions.push({
@@ -205,13 +179,12 @@ function parseGTBankFormat(text) {
   return transactions;
 }
 
-// Strategy 4: First Bank format
+// First Bank
 function parseFirstBankFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
   
   for (const line of lines) {
-    // First Bank: 07-Apr-2026 | CHICKEN REPUBLIC | 5,000.00 | Dr
     const match = line.match(/(\d{1,2}-[A-Za-z]{3}-\d{4})\s*[|\|]\s*(.+?)\s*[|\|]\s*([\d,]+\.\d{2})\s*[|\|]?\s*(Dr|Cr)?/i);
     if (match) {
       transactions.push({
@@ -226,20 +199,19 @@ function parseFirstBankFormat(text) {
   return transactions;
 }
 
-// Strategy 5: UBA format
+// UBA
 function parseUBAFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
   
   for (const line of lines) {
-    // UBA: 07/04/2026 Debit 5,000.00 CHICKEN REPUBLIC
     const match = line.match(/(\d{2}\/\d{2}\/\d{4})\s+(Debit|Credit)\s+([\d,]+\.\d{2})\s+(.+)/i);
     if (match) {
       transactions.push({
         date: formatDate(match[1]),
         narration: cleanNarration(match[4]),
         amount: parseAmount(match[3]),
-        type: match[2].toLowerCase() === 'debit' ? 'debit' : 'credit'
+        type: match[2].toLowerCase()
       });
     }
   }
@@ -247,20 +219,19 @@ function parseUBAFormat(text) {
   return transactions;
 }
 
-// Strategy 6: Zenith Bank format
+// Zenith Bank
 function parseZenithFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
   
   for (const line of lines) {
-    // Zenith: 07/04/2026 5,000.00 CHICKEN REPUBLIC POS
     const match = line.match(/(\d{2}\/\d{2}\/\d{4})\s+([\d,]+\.\d{2})\s+(.+)/i);
     if (match && !match[3].toLowerCase().includes('balance')) {
       transactions.push({
         date: formatDate(match[1]),
         narration: cleanNarration(match[3]),
         amount: parseAmount(match[2]),
-        type: 'debit' // Most are debits, will be corrected later
+        type: 'debit'
       });
     }
   }
@@ -268,13 +239,12 @@ function parseZenithFormat(text) {
   return transactions;
 }
 
-// Strategy 7: Kuda Bank format
+// Kuda Bank
 function parseKudaFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
   
   for (const line of lines) {
-    // Kuda: You spent N5,000.00 at CHICKEN REPUBLIC on 07 Apr 2026
     const match = line.match(/(?:spent|received)\s+(?:N|NGN|₦)\s*([\d,]+\.\d{2})\s+(?:at|from)\s+(.+?)\s+on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})/i);
     if (match) {
       transactions.push({
@@ -289,7 +259,44 @@ function parseKudaFormat(text) {
   return transactions;
 }
 
-// Strategy 8: CSV format
+// ============================================================
+// GENERIC PARSERS
+// ============================================================
+
+// Standard table format
+function parseStandardTableFormat(text) {
+  const transactions = [];
+  const lines = text.split('\n');
+  
+  const patterns = [
+    /(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+([A-Za-z0-9\s\.,\-]+?)\s+([\d,]+\.\d{2})?\s+([\d,]+\.\d{2})?\s+([\d,]+\.\d{2})/i,
+    /(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+[-–]\s+(.+?)\s+[-–]\s+([\d,]+\.\d{2})/i,
+    /(\d{2}[\/\-]\d{2}[\/\-]\d{2,4})\s+(.+?)\s+(?:NGN|N|₦)\s+([\d,]+\.\d{2})/i,
+  ];
+  
+  for (const line of lines) {
+    for (const pattern of patterns) {
+      const match = line.match(pattern);
+      if (match) {
+        const transaction = {
+          date: formatDate(match[1]),
+          narration: cleanNarration(match[2]),
+          amount: parseAmount(match[3] || match[4] || match[2]),
+          type: determineType(line, match)
+        };
+        
+        if (transaction.amount > 0) {
+          transactions.push(transaction);
+        }
+        break;
+      }
+    }
+  }
+  
+  return transactions;
+}
+
+// CSV format
 function parseCSVFormat(text) {
   const transactions = [];
   const lines = text.split('\n');
@@ -324,7 +331,7 @@ function parseCSVFormat(text) {
   return transactions;
 }
 
-// Strategy 9: Line by line fallback
+// Line by line fallback
 function parseLineByLine(text) {
   const transactions = [];
   const lines = text.split('\n');
@@ -332,24 +339,20 @@ function parseLineByLine(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Look for amount pattern
     const amountMatch = line.match(/(?:N|NGN|₦)\s*([\d,]+(?:\.\d{2})?)/i);
     if (!amountMatch) continue;
     
     const amount = parseAmount(amountMatch[1]);
     if (amount === 0) continue;
     
-    // Look for date
     let date = new Date().toISOString().split('T')[0];
     const dateMatch = line.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
     if (dateMatch) date = formatDate(dateMatch[1]);
     
-    // Look for merchant/description
     let narration = '';
     const textBeforeAmount = line.substring(0, line.indexOf(amountMatch[0]));
     const words = textBeforeAmount.split(/\s+/);
     
-    // Find potential merchant (capitalized words or common patterns)
     for (let j = words.length - 1; j >= 0; j--) {
       if (words[j] && (words[j][0] === words[j][0].toUpperCase() || words[j].length > 3)) {
         narration = words.slice(Math.max(0, j-3), j+1).join(' ');
@@ -359,9 +362,8 @@ function parseLineByLine(text) {
     
     if (!narration) narration = "Transaction";
     
-    // Determine type
     let type = 'debit';
-    if (line.toLowerCase().includes('credit') || line.toLowerCase().includes('received') || line.toLowerCase().includes('transfer from')) {
+    if (line.toLowerCase().includes('credit') || line.toLowerCase().includes('received')) {
       type = 'credit';
     }
     
@@ -376,17 +378,13 @@ function parseLineByLine(text) {
   return transactions;
 }
 
-// Strategy 10: Regex patterns (catch-all)
+// Regex patterns catch-all
 function parseWithRegexPatterns(text) {
   const transactions = [];
   
-  // Common transaction patterns in Nigerian bank statements
   const patterns = [
-    // Pattern: Amount followed by merchant
     /(?:N|NGN|₦)\s*([\d,]+\.\d{2})\s+(?:at|to|from|for)\s+([A-Z][A-Za-z\s]+?)(?:\s+on|\s+$|\s+\d)/i,
-    // Pattern: Merchant then amount
     /([A-Z][A-Za-z\s]{5,30}?)\s+(?:of|was)\s+(?:N|NGN|₦)\s*([\d,]+\.\d{2})/i,
-    // Pattern: POS/Mobile/Transfer transaction
     /(?:POS|MOBILE|TRF|TRANSFER|DEBIT|CREDIT)[:\s]+(.+?)\s+(?:N|NGN|₦)\s*([\d,]+\.\d{2})/i,
   ];
   
@@ -410,25 +408,20 @@ function parseWithRegexPatterns(text) {
   return transactions;
 }
 
-// Helper: Extract text from PDF
-async function extractTextFromPDF(base64Data) {
-  const buffer = Buffer.from(base64Data, 'base64');
-  return buffer.toString('utf-8');
-}
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
 
-// Helper: Clean narration text
 function cleanNarration(text) {
   if (!text) return '';
   
   let cleaned = text
-    .replace(/\d{10,}/g, '')  // Remove long numbers
-    .replace(/[A-Z0-9]{8,}/g, '')  // Remove codes
+    .replace(/\d{10,}/g, '')
+    .replace(/[A-Z0-9]{8,}/g, '')
     .replace(/\/MMF\/|\/Food\/|\/Pay\/|\/Meds\/|\/Transportation\//gi, ' → ')
     .replace(/\s+/g, ' ')
-    .replace(/^[\s\-_]+|[\s\-_]+$/g, '')
     .trim();
   
-  // Capitalize first letter of each word
   cleaned = cleaned.split(' ').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
   ).join(' ');
@@ -436,7 +429,6 @@ function cleanNarration(text) {
   return cleaned.substring(0, 100);
 }
 
-// Helper: Parse amount
 function parseAmount(amountStr) {
   if (!amountStr) return 0;
   const cleaned = String(amountStr).replace(/[^0-9.-]/g, '');
@@ -444,33 +436,24 @@ function parseAmount(amountStr) {
   return isNaN(amount) ? 0 : amount;
 }
 
-// Helper: Format date to YYYY-MM-DD
 function formatDate(dateStr) {
   if (!dateStr) return new Date().toISOString().split('T')[0];
   
-  // Handle different date formats
   let cleaned = dateStr.toString().trim();
-  
-  // Remove time part if present
   cleaned = cleaned.split(' ')[0];
-  
-  // Replace various separators
   cleaned = cleaned.replace(/-/g, '/');
   
   const parts = cleaned.split('/');
   
   if (parts.length === 3) {
-    // Check if year is first (YYYY/MM/DD)
     if (parts[0].length === 4) {
       return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
-    // Assume DD/MM/YYYY
     let year = parts[2];
     if (year.length === 2) year = '20' + year;
     return `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
   }
   
-  // Handle "07 Apr 2026" format
   const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
   const monthMatch = cleaned.match(/([A-Za-z]{3})/i);
   if (monthMatch) {
@@ -485,7 +468,6 @@ function formatDate(dateStr) {
   return new Date().toISOString().split('T')[0];
 }
 
-// Helper: Determine transaction type
 function determineType(line, match) {
   const lineLower = line.toLowerCase();
   const text = match[0].toLowerCase();
@@ -496,12 +478,9 @@ function determineType(line, match) {
   if (lineLower.includes('debit') || text.includes('debit') || lineLower.includes('spent') || lineLower.includes('paid')) {
     return 'debit';
   }
-  
-  // Default: if it has amount and not clearly credit, assume debit
   return 'debit';
 }
 
-// Helper: Remove duplicate transactions
 function removeDuplicates(transactions) {
   const seen = new Set();
   return transactions.filter(t => {
@@ -512,7 +491,6 @@ function removeDuplicates(transactions) {
   });
 }
 
-// Helper: Enrich with categories and merchants
 function enrichTransactions(transactions) {
   return transactions.map(t => ({
     ...t,
@@ -521,13 +499,11 @@ function enrichTransactions(transactions) {
   }));
 }
 
-// Helper: Extract merchant name
 function extractMerchant(narration) {
   const merchants = [
-    'MAGATHEMES CONCEPTS', 'MERIT VENTURES', 'SPORTYBET', 'PIGGYTECH', 
-    'GOOGLE', 'ROBLOX', 'CHICKEN REPUBLIC', 'UBER', 'BOLT', 'DSTV', 'GOTV',
-    'NETFLIX', 'SPOTIFY', 'AMAZON', 'JUMIA', 'KONGA', 'SHOPRITE', 'JUSTICE',
-    'ACCESS BANK', 'GTBANK', 'FIRST BANK', 'UBA', 'ZENITH', 'KUDA', 'OPAY'
+    'CHICKEN REPUBLIC', 'UBER', 'BOLT', 'DSTV', 'GOTV', 'NETFLIX', 'SPOTIFY',
+    'AMAZON', 'JUMIA', 'KONGA', 'SHOPRITE', 'ACCESS BANK', 'GTBANK', 'FIRST BANK',
+    'UBA', 'ZENITH', 'KUDA', 'OPAY', 'SPORTYBET', 'PIGGYTECH', 'GOOGLE', 'ROBLOX'
   ];
   
   const upperNarration = narration.toUpperCase();
@@ -538,9 +514,7 @@ function extractMerchant(narration) {
     }
   }
   
-  // Extract name after "to", "from", "at"
   const patterns = [/(?:TO|FROM|AT)\s+([A-Z\s]{3,30})/i, /([A-Z][A-Z\s]{5,25}?)(?:\s+-\s+|\s+$)/i];
-  
   for (const pattern of patterns) {
     const match = narration.match(pattern);
     if (match) return match[1].trim();
@@ -554,21 +528,20 @@ function extractMerchant(narration) {
   return 'Unknown Merchant';
 }
 
-// Helper: Infer category from narration
 function inferCategory(narration) {
   const lower = narration.toLowerCase();
   
   const categories = {
-    'Food': /food|chicken|restaurant|kfc|mcdonald|burger|pizza|cafe|eatery|meal|dinner|lunch|breakfast|merit ventures|chicken republic/i,
-    'Transport': /transport|uber|bolt|taxi|bus|train|fuel|petrol|diesel|filling station|mobility|logistics|rj logistics/i,
-    'Entertainment': /sportybet|bet|game|gaming|roblox|netflix|spotify|cinema|movie|dstv|gotv|showmax|premiere|entertainment/i,
-    'Utilities': /google|subscription|internet|wifi|data|airtime|electricity|water|bill|utility|mtn|glo|airtel|9mobile/i,
-    'Shopping': /shop|store|mall|market|amazon|jumia|konga|supermarket|retail|shopping|store|boutique/i,
-    'Savings': /piggytech|savings|invest|piggyvest|cowrywise|invest|interest|dividend/i,
+    'Food': /food|chicken|restaurant|kfc|burger|pizza|cafe|eatery|meal|dinner|lunch|chicken republic/i,
+    'Transport': /transport|uber|bolt|taxi|bus|train|fuel|petrol|diesel|filling station/i,
+    'Entertainment': /sportybet|bet|game|roblox|netflix|spotify|cinema|movie|dstv|gotv|showmax/i,
+    'Utilities': /google|subscription|internet|wifi|data|airtime|electricity|water|bill|mtn|glo|airtel/i,
+    'Shopping': /shop|store|mall|market|amazon|jumia|konga|supermarket|retail|boutique/i,
+    'Savings': /piggytech|savings|invest|piggyvest|cowrywise|interest|dividend/i,
     'Transfer': /transfer|trf|send|receive|payment|pay|nibss|nip/i,
     'Health': /meds|health|hospital|clinic|pharmacy|drug|doctor|medical|wellness/i,
-    'Education': /school|tution|education|university|college|book|course|training/i,
-    'Salary': /salary|wage|income|earning|payment|commission/i
+    'Education': /school|tuition|education|university|college|book|course|training/i,
+    'Salary': /salary|wage|income|earning|commission/i
   };
   
   for (const [category, pattern] of Object.entries(categories)) {
