@@ -108,7 +108,7 @@ async function callClaudeVision(images, prompt) {
     },
     body: JSON.stringify({
       model: "claude-3-sonnet-20240229",
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [{ role: "user", content }]
     })
   });
@@ -137,7 +137,7 @@ async function callDeepSeek(messages, system) {
         ...messages
       ],
       temperature: 0.2,
-      max_tokens: 2048
+      max_tokens: 8192
     })
   });
   if (!response.ok) throw new Error(`DeepSeek HTTP ${response.status}`);
@@ -162,7 +162,7 @@ async function callGroq(messages, system) {
         ...messages
       ],
       temperature: 0.2,
-      max_tokens: 2048
+      max_tokens: 8192
     })
   });
   if (!response.ok) throw new Error(`Groq HTTP ${response.status}`);
@@ -210,7 +210,7 @@ async function callClaudeText(messages, system) {
     },
     body: JSON.stringify({
       model: "claude-3-haiku-20240307",
-      max_tokens: 2048,
+      max_tokens: 8192,
       system: system,
       messages: messages
     })
