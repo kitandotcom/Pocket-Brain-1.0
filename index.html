@@ -12,7 +12,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
 <title>Pocket Brain</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<!-- PDF.js for client-side PDF rendering -->
+<!-- PDF.js for text extraction -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
 /* ── THEMES ── */
@@ -353,16 +353,16 @@ select:focus{border-color:var(--accent)}
         <!-- Bank Statement / Screenshot Upload -->
         <div class="card" style="margin-bottom:12px">
           <div class="card-title">📄 Upload Bank Statement or Screenshot</div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">Upload a bank statement PDF or a screenshot of your transactions. AI will extract and categorize all transactions automatically.</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">Upload a bank statement PDF. AI will extract and categorize all transactions automatically.</div>
           
           <!-- Drop zone -->
           <div id="dropZone" onclick="document.getElementById('fileInput').click()" 
             style="border:2px dashed var(--accent);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;background:var(--accent-light);transition:all .2s;margin-bottom:14px">
             <div style="font-size:36px;margin-bottom:10px">📁</div>
-            <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px">Tap to upload file</div>
-            <div style="font-size:12px;color:var(--text2)">PDF bank statement or JPG/PNG screenshot</div>
+            <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px">Tap to upload PDF</div>
+            <div style="font-size:12px;color:var(--text2)">PDF bank statement (text‑based or scanned)</div>
           </div>
-          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFileUpload(event)"/>
+          <input type="file" id="fileInput" accept=".pdf" style="display:none" onchange="handleFileUpload(event)"/>
           
           <div id="uploadStatus" style="display:none;margin-bottom:14px">
             <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px" id="uploadStatusText">Processing...</div>
@@ -557,7 +557,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 // ── INIT ──────────────────────────────────
 async function init(){
   try{
-    // Check if user came from password reset email
     const hash=window.location.hash;
     if(hash&&hash.includes("type=recovery")){
       const params=new URLSearchParams(hash.substring(1));
@@ -643,9 +642,6 @@ function showApp(){
     document.getElementById("authScreen").style.display="none";
     document.getElementById("forgotScreen").style.display="none";
     document.getElementById("appScreen").style.display="flex";
-    const h=new Date().getHours();
-    const name=(currentUser?.user_metadata?.full_name||"").split(" ")[0]||"there";
-    const g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
     userPro=currentUser?.user_metadata?.is_pro===true;
     try{updateStats();}catch(e){console.error("updateStats:",e);}
     try{renderBankCards();}catch(e){console.error("renderBankCards:",e);}
@@ -709,7 +705,6 @@ function setAuthTab(m){
   document.getElementById("authTabSignup").className="auth-tab"+(m==="signup"?" active":"");
   document.getElementById("authBtn").textContent=m==="login"?"LOGIN":"CREATE ACCOUNT";
   document.getElementById("authNameField").className="field"+(m==="signup"?"":" hidden");
-  document.getElementById("forgotLink").style.display=m==="login"?"block":"none";
   document.getElementById("authMsg").textContent="";
 }
 
@@ -1341,120 +1336,169 @@ function renderDashboard(){
   }
 }
 
-
-// ── FILE UPLOAD / STATEMENT PARSER (using /api/ai) ───────
+// ── FILE UPLOAD (TEXT EXTRACTION + AI PARSE) ──
 let extractedTransactions = [];
 
-async function handleFileUpload(event){
+async function handleFileUpload(event) {
   const file = event.target.files[0];
-  if(!file) return;
-  
+  if (!file) return;
+
   const statusDiv = document.getElementById("uploadStatus");
   const statusText = document.getElementById("uploadStatusText");
   const progressBar = document.getElementById("uploadProgress");
   const extractedDiv = document.getElementById("extractedTxList");
-  
+
   statusDiv.style.display = "block";
   extractedDiv.style.display = "none";
-  statusText.textContent = "Processing file...";
+  statusText.textContent = "Reading PDF text...";
   progressBar.style.width = "10%";
-  
-  const isPDF = file.type === "application/pdf";
-  const isImage = file.type.startsWith("image/");
-  
-  if(!isPDF && !isImage){
-    statusText.textContent = "❌ Please upload a PDF or image file";
+
+  if (file.type !== "application/pdf") {
+    statusText.textContent = "❌ Please upload a PDF file";
     progressBar.style.width = "0%";
     return;
   }
-  
+
   try {
-    let images = []; // each: { base64 }
-    
-    if(isPDF){
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const totalPages = pdf.numPages;
-      statusText.textContent = `Rendering ${totalPages} page(s)...`;
-      progressBar.style.width = "30%";
-      
-      for(let i=1; i<=totalPages; i++){
-        statusText.textContent = `Page ${i}/${totalPages} – extracting...`;
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2.0 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
-        const base64 = canvas.toDataURL("image/jpeg", 0.8);
-        images.push({ base64: base64.split(",")[1] });
-        progressBar.style.width = `${30 + (i/totalPages)*40}%`;
-      }
-    } else {
-      // Single image
-      const reader = new FileReader();
-      const base64 = await new Promise((resolve) => {
-        reader.onload = (e) => resolve(e.target.result.split(",")[1]);
-        reader.readAsDataURL(file);
-      });
-      images = [{ base64 }];
-      progressBar.style.width = "50%";
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const totalPages = pdf.numPages;
+    let fullText = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+      statusText.textContent = `Extracting text from page ${i}/${totalPages}...`;
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(" ");
+      fullText += pageText + "\n";
+      progressBar.style.width = `${10 + (i / totalPages) * 60}%`;
     }
-    
-    statusText.textContent = `Sending ${images.length} image(s) to AI...`;
-    progressBar.style.width = "70%";
-    
-    const prompt = `You are a bank statement OCR expert. Extract ALL debit and credit transactions from these images of a Nigerian bank statement. Return ONLY a JSON array of objects, no markdown, no explanation. Each object must have: 
-    - "date" (YYYY-MM-DD format, use the Post Date column)
-    - "name" (merchant or narration, cleaned up)
-    - "amount" (number, positive for debits)
-    - "category" (one of: Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other)
-    Ignore rows that are not transactions (like headers, totals, fees like SMS Alert Fee). For transfers use category "Transfer". For food merchants use "Food". Output JSON array only.`;
-    
-    const response = await fetch("/api/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images: images.map(img => img.base64), prompt })
-    });
-    
-    const data = await response.json();
-    progressBar.style.width = "90%";
-    
-    let extracted = [];
-    try {
-      const text = data.content?.[0]?.text || "[]";
-      const cleaned = text.replace(/```json|```/g, "").trim();
-      extracted = JSON.parse(cleaned);
-      if(!Array.isArray(extracted)) extracted = [];
-    } catch(e){
-      console.error("JSON parse error", e);
-      extracted = [];
-    }
-    
-    if(extracted.length === 0){
-      statusText.textContent = "❌ No transactions found. Try a clearer PDF/image.";
+
+    if (!fullText.trim()) {
+      statusText.textContent = "❌ No text found in PDF. Try a different file.";
       progressBar.style.width = "0%";
       return;
     }
-    
+
+    statusText.textContent = "Sending text to AI for parsing...";
+    progressBar.style.width = "70%";
+
+    // Use the same /api/ai endpoint with text messages
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [{
+          role: "user",
+          content: `You are a bank statement parser. Extract ALL transactions from the following text (Access Bank statement format). 
+Return ONLY a JSON array, no markdown. Each object must have:
+- "date": YYYY-MM-DD (use the "Post Date" column)
+- "name": clean merchant name (remove reference numbers)
+- "amount": number (positive for debits)
+- "category": one of Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other
+
+Rules:
+- Ignore headers, footers, and non‑transaction lines (like "Page", "SMS Alert Fee", "Stamp Duty").
+- If a row has both Debits and Credits, use the Debit amount.
+- For transfers, category = "Transfer".
+- For food/restaurants, category = "Food".
+- For betting/gaming, category = "Entertainment".
+
+Here is the text:
+${fullText}
+
+Output JSON array only.`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.[0]?.text || "[]";
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+    let transactions = [];
+    try {
+      transactions = JSON.parse(cleaned);
+      if (!Array.isArray(transactions)) transactions = [];
+    } catch (e) {
+      console.error("JSON parse error", cleaned);
+      transactions = [];
+    }
+
+    if (transactions.length === 0) {
+      statusText.textContent = "❌ AI could not extract transactions. Trying regex fallback...";
+      transactions = parseTransactionsWithRegex(fullText);
+    }
+
+    if (transactions.length === 0) {
+      statusText.textContent = "❌ No transactions found. Check PDF format.";
+      progressBar.style.width = "0%";
+      return;
+    }
+
     progressBar.style.width = "100%";
-    statusText.textContent = `✓ Found ${extracted.length} transactions`;
-    extractedTransactions = extracted;
+    statusText.textContent = `✓ Found ${transactions.length} transactions`;
+    extractedTransactions = transactions;
     renderExtractedTx();
     extractedDiv.style.display = "block";
-    
-  } catch(err){
+
+  } catch (err) {
     console.error(err);
     statusText.textContent = "❌ Failed to process file. Please try again.";
     progressBar.style.width = "0%";
   }
 }
 
-function renderExtractedTx(){
+// Regex fallback for Access Bank / GTBank text format
+function parseTransactionsWithRegex(text) {
+  const transactions = [];
+  const lines = text.split(/\r?\n/);
+  // Pattern: date (DD/MM/YYYY), then narration, then a number with commas and .00, then balance
+  const dateRegex = /(\d{2}\/\d{2}\/\d{4})/;
+  const amountRegex = /([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/; // debit and balance at line end
+
+  for (let line of lines) {
+    if (!dateRegex.test(line)) continue;
+    const dateMatch = line.match(dateRegex);
+    if (!dateMatch) continue;
+    const dateStr = dateMatch[1];
+    const parts = dateStr.split('/');
+    const isoDate = `20${parts[2]}-${parts[1]}-${parts[0]}`; // DD/MM/YYYY -> YYYY-MM-DD
+
+    const amountMatch = line.match(amountRegex);
+    if (!amountMatch) continue;
+    let amount = parseFloat(amountMatch[1].replace(/,/g, ''));
+    if (isNaN(amount)) continue;
+
+    // Extract merchant: everything after the second date (or after the first date) up to the amount
+    let merchant = "Unknown";
+    const afterDate = line.split(dateRegex)[2] || "";
+    const beforeAmount = afterDate.split(amountRegex)[0] || "";
+    const cleanedMerchant = beforeAmount.replace(/\s+/g, " ").trim();
+    if (cleanedMerchant.length > 0) merchant = cleanedMerchant.substring(0, 50);
+
+    // Simple category guessing
+    let category = "Other";
+    const lower = merchant.toLowerCase();
+    if (lower.includes("food") || lower.includes("restaurant") || lower.includes("cafe") || lower.includes("chicken")) category = "Food";
+    else if (lower.includes("transport") || lower.includes("uber") || lower.includes("bus")) category = "Transport";
+    else if (lower.includes("bet") || lower.includes("sporty")) category = "Entertainment";
+    else if (lower.includes("transfer") || lower.includes("trf")) category = "Transfer";
+    else if (lower.includes("paystack")) category = "Shopping";
+
+    transactions.push({
+      date: isoDate,
+      name: merchant,
+      amount: amount,
+      category: category
+    });
+  }
+  return transactions;
+}
+
+function renderExtractedTx() {
   const container = document.getElementById("extractedTxItems");
-  if(!container) return;
-  if(!extractedTransactions.length){
+  if (!container) return;
+  if (!extractedTransactions.length) {
     container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2)">No transactions</div>';
     return;
   }
@@ -1472,9 +1516,9 @@ function renderExtractedTx(){
   `).join("");
 }
 
-function removeExtracted(i){
-  extractedTransactions.splice(i,1);
-  if(extractedTransactions.length === 0){
+function removeExtracted(i) {
+  extractedTransactions.splice(i, 1);
+  if (extractedTransactions.length === 0) {
     document.getElementById("extractedTxList").style.display = "none";
     document.getElementById("uploadStatusText").textContent = "All removed";
   } else {
@@ -1483,12 +1527,12 @@ function removeExtracted(i){
   }
 }
 
-async function saveAllExtracted(){
+async function saveAllExtracted() {
   const btn = document.getElementById("saveAllBtn");
   btn.innerHTML = '<span class="spinner"></span>Saving...';
   btn.disabled = true;
   let saved = 0;
-  for(const tx of extractedTransactions){
+  for (const tx of extractedTransactions) {
     const ok = await saveExpense({
       name: tx.name || "Unknown",
       amount: tx.amount || 0,
@@ -1496,7 +1540,7 @@ async function saveAllExtracted(){
       date: tx.date || new Date().toISOString().split("T")[0],
       source: "upload"
     });
-    if(ok) saved++;
+    if (ok) saved++;
   }
   showToast(saved + " transactions saved ✓");
   document.getElementById("extractedTxList").style.display = "none";
@@ -1508,11 +1552,11 @@ async function saveAllExtracted(){
   switchTab("history");
 }
 
-function escapeHtml(str){
-  return str.replace(/[&<>]/g, function(m){
-    if(m === '&') return '&amp;';
-    if(m === '<') return '&lt;';
-    if(m === '>') return '&gt;';
+function escapeHtml(str) {
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
     return m;
   });
 }
@@ -1527,7 +1571,8 @@ document.addEventListener("DOMContentLoaded", function(){
     e.preventDefault();
     zone.style.borderStyle = "dashed";
     const file = e.dataTransfer.files[0];
-    if(file){ document.getElementById("fileInput").files = e.dataTransfer.files; handleFileUpload({target:{files:[file]}}); }
+    if(file && file.type === "application/pdf"){ document.getElementById("fileInput").files = e.dataTransfer.files; handleFileUpload({target:{files:[file]}}); }
+    else { showToast("Please drop a PDF file", "error"); }
   });
 });
 
