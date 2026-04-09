@@ -12,6 +12,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text y='75' font-size='60' text-anchor='middle' x='50'>🧠</text></svg>"/>
 <title>Pocket Brain</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<!-- PDF.js for client-side PDF rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
 /* ── THEMES ── */
 [data-theme="light"]{
@@ -549,19 +551,20 @@ let linkedBanks=JSON.parse(localStorage.getItem("pb_banks")||"[]");
 let selectedBankName="";
 let currentUser=null,userPro=false,expenses=[],parsedData=null,bankModalStep=0;
 
+// Set pdf.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
 // ── INIT ──────────────────────────────────
 async function init(){
   try{
     // Check if user came from password reset email
     const hash=window.location.hash;
     if(hash&&hash.includes("type=recovery")){
-      // Extract tokens and set session
       const params=new URLSearchParams(hash.substring(1));
       const accessToken=params.get("access_token");
       const refreshToken=params.get("refresh_token");
       if(accessToken){
         await sb.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
-        // Show password update screen
         showUpdatePassword();
         return;
       }
@@ -585,7 +588,6 @@ function showUpdatePassword(){
   document.getElementById("authScreen").style.display="none";
   document.getElementById("forgotScreen").style.display="none";
   document.getElementById("appScreen").style.display="none";
-  // Create update password screen dynamically
   let el=document.getElementById("updatePwScreen");
   if(!el){
     el=document.createElement("div");
@@ -626,7 +628,6 @@ async function updatePassword(){
     msg.textContent="✓ Password updated! Redirecting...";
     setTimeout(()=>{
       document.getElementById("updatePwScreen").style.display="none";
-      // Clear hash from URL
       history.replaceState(null,null," ");
       showAuth();
     },2000);
@@ -645,9 +646,6 @@ function showApp(){
     const h=new Date().getHours();
     const name=(currentUser?.user_metadata?.full_name||"").split(" ")[0]||"there";
     const g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
-    // greeting shown in topbar brand name
-    const topbarName = document.getElementById("topbarGreeting");
-    if(topbarName) topbarName.textContent = `${g}, ${name} 👋`;
     userPro=currentUser?.user_metadata?.is_pro===true;
     try{updateStats();}catch(e){console.error("updateStats:",e);}
     try{renderBankCards();}catch(e){console.error("renderBankCards:",e);}
@@ -673,7 +671,6 @@ function showLogin(){
   document.getElementById("authScreen").style.display="flex";
 }
 
-// Safety net
 setTimeout(()=>{
   const auth=document.getElementById("authScreen");
   const app=document.getElementById("appScreen");
@@ -854,7 +851,7 @@ async function parseAlert(){
   document.getElementById("parsedCard").classList.add("hidden");
   document.getElementById("parseError").classList.add("hidden");
   try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+    const res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({messages:[{role:"user",content:`Extract transaction info from this Nigerian bank alert. Return ONLY a JSON object, no markdown:\n{"name":"merchant name","amount":number,"category":"Food|Transport|Utilities|Health|Entertainment|Shopping|Education|Savings|Transfer|Other","date":"YYYY-MM-DD","bank":"bank name"}\n\nAlert: "${text}"\n\nJSON only:`}]})});
     const data=await res.json();
     const raw=data.content?.[0]?.text||"{}";
@@ -880,7 +877,7 @@ async function confirmParsed(){
   if(!parsedData)return;
   const src=parsedData.bank?.toLowerCase().includes("access")?"access":"gtb";
   const ok=await saveExpense({name:parsedData.name,amount:parsedData.amount,category:parsedData.category||"Other",date:parsedData.date||new Date().toISOString().split("T")[0],source:src});
-  if(ok){document.getElementById("alertInput").value="";document.getElementById("parsedCard").classList.add("hidden");parsedData=null;showToast("Transaction saved ✓");switchTab("transactions");}
+  if(ok){document.getElementById("alertInput").value="";document.getElementById("parsedCard").classList.add("hidden");parsedData=null;showToast("Transaction saved ✓");switchTab("history");}
   else showToast("Failed to save. Try again.","error");
 }
 
@@ -929,7 +926,6 @@ function renderInsight(){
       <div class="bar-track"><div class="bar-fill" style="background:${COLORS[cat]};width:${(val/maxV)*100}%"></div></div>
       <div class="bar-note">${total>0?((val/total)*100).toFixed(1)+"% of total":""}</div>
     </div>`).join(""):`<div style="color:var(--text2);font-size:13px">No data yet</div>`;
-  // Render all new features
   renderPersonality();
   detectBills();
   renderForecast();
@@ -937,7 +933,6 @@ function renderInsight(){
   renderBudgets();
   renderGoals();
   checkBrokeAlert();
-  // Restore broke threshold input
   const t=localStorage.getItem("pb_broke_threshold");
   if(t)document.getElementById("brokeThreshold").value=t;
 }
@@ -951,7 +946,7 @@ async function getInsight(){
   const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
   const summary=expenses.map(e=>`${e.name}: ${naira(e.amount)} (${e.category}) on ${e.date}`).join("\n");
   try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+    const res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({system:"You are a sharp, direct Nigerian personal finance advisor. Be specific, use actual data, never give generic advice.",
         messages:[{role:"user",content:`Analyze these bank transactions. Give 3 short punchy sentences of honest advice, mention actual merchant names and numbers. End with ONE specific action they can take this week to save money.\n\nTransactions:\n${summary}\nTotal: ${naira(total)}`}]})});
     const data=await res.json();
@@ -1202,7 +1197,7 @@ async function generateWeeklySummary(){
   const total=weekExp.reduce((s,e)=>s+Number(e.amount),0);
   const summary=weekExp.map(e=>`${e.name}: ${naira(e.amount)} (${e.category})`).join("\n");
   try{
-    const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},
+    const res=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({system:"You are a sharp Nigerian finance advisor. Be concise, specific, and direct.",
         messages:[{role:"user",content:`Generate a brief weekly spending summary (max 5 bullet points) for these transactions from the past 7 days. Include total, top category, and one key observation.\n\n${summary}\n\nTotal: ${naira(total)}`}]})});
     const data=await res.json();
@@ -1347,129 +1342,144 @@ function renderDashboard(){
 }
 
 
-// ── FILE UPLOAD / STATEMENT PARSER ───────
+// ── FILE UPLOAD / STATEMENT PARSER (using /api/ai) ───────
 let extractedTransactions = [];
 
-function handleFileUpload(event){
+async function handleFileUpload(event){
   const file = event.target.files[0];
   if(!file) return;
   
-  const status = document.getElementById("uploadStatus");
+  const statusDiv = document.getElementById("uploadStatus");
   const statusText = document.getElementById("uploadStatusText");
-  const progress = document.getElementById("uploadProgress");
-  const extractedList = document.getElementById("extractedTxList");
+  const progressBar = document.getElementById("uploadProgress");
+  const extractedDiv = document.getElementById("extractedTxList");
   
-  status.style.display = "block";
-  extractedList.style.display = "none";
-  statusText.textContent = "Reading file...";
-  progress.style.width = "20%";
-
-  // Check file type
+  statusDiv.style.display = "block";
+  extractedDiv.style.display = "none";
+  statusText.textContent = "Processing file...";
+  progressBar.style.width = "10%";
+  
   const isPDF = file.type === "application/pdf";
   const isImage = file.type.startsWith("image/");
   
   if(!isPDF && !isImage){
     statusText.textContent = "❌ Please upload a PDF or image file";
-    progress.style.width = "0%";
+    progressBar.style.width = "0%";
     return;
   }
-
-  const reader = new FileReader();
   
-  reader.onload = async function(e){
-    progress.style.width = "50%";
-    statusText.textContent = "Sending to AI for analysis...";
+  try {
+    let images = []; // each: { base64 }
     
-    try{
-      const base64 = e.target.result.split(",")[1];
-      const mediaType = file.type;
+    if(isPDF){
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const totalPages = pdf.numPages;
+      statusText.textContent = `Rendering ${totalPages} page(s)...`;
+      progressBar.style.width = "30%";
       
-      // Build the message with image/document
-      let messageContent;
-      if(isImage){
-        messageContent = [
-          {
-            type: "image",
-            source: { type: "base64", media_type: mediaType, data: base64 }
-          },
-          {
-            type: "text",
-            text: "This is a Nigerian bank statement screenshot or transaction list. Extract ALL transactions you can see. For each transaction return a JSON array with objects: {name, amount, date, category}. Category must be one of: Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other. Amount must be a number (no currency symbols). Date in YYYY-MM-DD format. Return ONLY the JSON array, no markdown, no explanation."
-          }
-        ];
-      } else {
-        // PDF - send as document
-        messageContent = [
-          {
-            type: "document",
-            source: { type: "base64", media_type: "application/pdf", data: base64 }
-          },
-          {
-            type: "text", 
-            text: "This is a Nigerian bank statement PDF. Extract ALL debit/credit transactions. Return a JSON array: [{name, amount, date, category}]. Category from: Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other. Amount as number, date as YYYY-MM-DD. Return ONLY the JSON array."
-          }
-        ];
+      for(let i=1; i<=totalPages; i++){
+        statusText.textContent = `Page ${i}/${totalPages} – extracting...`;
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+        const base64 = canvas.toDataURL("image/jpeg", 0.8);
+        images.push({ base64: base64.split(",")[1] });
+        progressBar.style.width = `${30 + (i/totalPages)*40}%`;
       }
-
-      const res = await fetch("/api/claude", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ messages: [{ role: "user", content: messageContent }] })
+    } else {
+      // Single image
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve) => {
+        reader.onload = (e) => resolve(e.target.result.split(",")[1]);
+        reader.readAsDataURL(file);
       });
-      
-      const data = await res.json();
-      progress.style.width = "85%";
-      
-      const text = data.content?.[0]?.text || "[]";
-      const clean = text.replace(/```json|```/g, "").trim();
-      extractedTransactions = JSON.parse(clean);
-      
-      if(!Array.isArray(extractedTransactions) || extractedTransactions.length === 0){
-        statusText.textContent = "❌ No transactions found. Try a clearer image.";
-        progress.style.width = "0%";
-        return;
-      }
-      
-      progress.style.width = "100%";
-      statusText.textContent = "✓ Found " + extractedTransactions.length + " transactions";
-      
-      // Show extracted transactions
-      renderExtractedTx();
-      extractedList.style.display = "block";
-      
-    } catch(err) {
-      statusText.textContent = "❌ Failed to process. Try again.";
-      progress.style.width = "0%";
-      console.error(err);
+      images = [{ base64 }];
+      progressBar.style.width = "50%";
     }
-  };
-  
-  reader.readAsDataURL(file);
+    
+    statusText.textContent = `Sending ${images.length} image(s) to AI...`;
+    progressBar.style.width = "70%";
+    
+    const prompt = `You are a bank statement OCR expert. Extract ALL debit and credit transactions from these images of a Nigerian bank statement. Return ONLY a JSON array of objects, no markdown, no explanation. Each object must have: 
+    - "date" (YYYY-MM-DD format, use the Post Date column)
+    - "name" (merchant or narration, cleaned up)
+    - "amount" (number, positive for debits)
+    - "category" (one of: Food, Transport, Utilities, Health, Entertainment, Shopping, Education, Savings, Transfer, Other)
+    Ignore rows that are not transactions (like headers, totals, fees like SMS Alert Fee). For transfers use category "Transfer". For food merchants use "Food". Output JSON array only.`;
+    
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ images: images.map(img => img.base64), prompt })
+    });
+    
+    const data = await response.json();
+    progressBar.style.width = "90%";
+    
+    let extracted = [];
+    try {
+      const text = data.content?.[0]?.text || "[]";
+      const cleaned = text.replace(/```json|```/g, "").trim();
+      extracted = JSON.parse(cleaned);
+      if(!Array.isArray(extracted)) extracted = [];
+    } catch(e){
+      console.error("JSON parse error", e);
+      extracted = [];
+    }
+    
+    if(extracted.length === 0){
+      statusText.textContent = "❌ No transactions found. Try a clearer PDF/image.";
+      progressBar.style.width = "0%";
+      return;
+    }
+    
+    progressBar.style.width = "100%";
+    statusText.textContent = `✓ Found ${extracted.length} transactions`;
+    extractedTransactions = extracted;
+    renderExtractedTx();
+    extractedDiv.style.display = "block";
+    
+  } catch(err){
+    console.error(err);
+    statusText.textContent = "❌ Failed to process file. Please try again.";
+    progressBar.style.width = "0%";
+  }
 }
 
 function renderExtractedTx(){
   const container = document.getElementById("extractedTxItems");
-  container.innerHTML = extractedTransactions.map((tx, i) => 
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)">' +
-    '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + tx.name + '</div>' +
-    '<div style="font-size:11px;color:var(--text2);margin-top:3px">' + (tx.date||"—") + ' · ' + (ICONS[tx.category]||"📦") + ' ' + (tx.category||"Other") + '</div>' +
-    '</div>' +
-    '<div style="text-align:right;flex-shrink:0;margin-left:12px">' +
-    '<div style="font-size:14px;font-weight:800;color:var(--red)">₦' + Number(tx.amount||0).toLocaleString("en-NG") + '</div>' +
-    '<button onclick="removeExtracted(' + i + ')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit">remove</button>' +
-    '</div></div>'
-  ).join("");
+  if(!container) return;
+  if(!extractedTransactions.length){
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2)">No transactions</div>';
+    return;
+  }
+  container.innerHTML = extractedTransactions.map((tx, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(tx.name || "Unknown")}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">${tx.date || "—"} · ${ICONS[tx.category] || "📦"} ${tx.category || "Other"}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px">
+        <div style="font-size:14px;font-weight:800;color:var(--red)">₦${Number(tx.amount || 0).toLocaleString("en-NG")}</div>
+        <button onclick="removeExtracted(${i})" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer">remove</button>
+      </div>
+    </div>
+  `).join("");
 }
 
 function removeExtracted(i){
-  extractedTransactions.splice(i, 1);
+  extractedTransactions.splice(i,1);
   if(extractedTransactions.length === 0){
     document.getElementById("extractedTxList").style.display = "none";
     document.getElementById("uploadStatusText").textContent = "All removed";
   } else {
     renderExtractedTx();
-    document.getElementById("uploadStatusText").textContent = "✓ " + extractedTransactions.length + " transactions";
+    document.getElementById("uploadStatusText").textContent = `✓ ${extractedTransactions.length} transactions`;
   }
 }
 
@@ -1496,6 +1506,15 @@ async function saveAllExtracted(){
   btn.innerHTML = "Save All Transactions ✓";
   btn.disabled = false;
   switchTab("history");
+}
+
+function escapeHtml(str){
+  return str.replace(/[&<>]/g, function(m){
+    if(m === '&') return '&amp;';
+    if(m === '<') return '&lt;';
+    if(m === '>') return '&gt;';
+    return m;
+  });
 }
 
 // Drag and drop support
